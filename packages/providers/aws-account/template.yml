@@ -1,0 +1,15 @@
+env: provider
+components:
+  - name: aws-account
+    provider:
+      name: cdk
+      config:
+        constructPath: index
+        account: 
+        region: "us-east-1"
+        buildDir: "aws-account"
+    inputs:
+      providerName: aws-account
+      compute: LAMBDA
+      handler: handler
+      entry: lib/handler.ts

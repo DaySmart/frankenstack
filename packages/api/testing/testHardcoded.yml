@@ -1,0 +1,14 @@
+env: foo
+components:
+  - name: bar20
+    provider:
+      name: hardcoded
+    inputs:
+      asdfasdf: hello
+      ANOTHEsdfR: hi
+  - name: bar30
+    provider:
+      name: hardcoded
+    inputs:
+      asdfasdf: hello
+      test: ${foo:bar20:asdfasdf}

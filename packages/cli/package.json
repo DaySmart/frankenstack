@@ -1,0 +1,38 @@
+{
+  "name": "frankenstack",
+  "version": "1.0.0",
+  "description": "",
+  "main": "bin/index.js",
+  "bin": {
+    "frank": "bin/index.js"
+  },
+  "preferGlobal": true,
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Chris <christopher.dettloff@daysmart.com>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@aws-sdk/credential-provider-node": "^3.22.0",
+    "@daysmart/frankenstack-appsync-client": "1.1.0",
+    "aws-sdk": "^2.829.0",
+    "es6-promise": "^4.1.1",
+    "flat": "^5.0.2",
+    "graphql": "^15.5.1",
+    "isomorphic-fetch": "^2.2.1",
+    "js-yaml": "^3.14.1",
+    "json-refs": "^3.0.15",
+    "minimist": "^1.2.5",
+    "p-event": "^4.2.0",
+    "s3-node-client": "^4.4.4",
+    "uuid": "^8.3.2",
+    "ws": "^3.3.1",
+    "zip-a-folder": "0.0.12"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.22",
+    "typescript": "^4.1.3"
+  }
+}

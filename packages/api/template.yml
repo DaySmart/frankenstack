@@ -1,0 +1,212 @@
+Name:
+DefaultRouter: asyncLambdaRouter
+ComponentLibrary:
+  - asyncLambdaRouter:
+      type: router
+      plugin: dsi-aws-sls
+      module: AsyncLambdaRouter
+      inputs:
+        something: override
+  - snsRouter:
+      type: router
+      plugin: dsi-aws-sls
+      module: SNSLambdaRouter
+      inputs:
+        something: override
+  - consoleLogger:
+      type: logger
+      plugin: dsi-aws-sls
+      module: ConsoleLogger
+      inputs:
+        something: override
+  - dynamoStorage:
+      type: storage
+      plugin: dsi-aws-sls
+      module: DynamoDBStorage
+      inputs:
+        something: override
+  - httpZuoraObserver:
+      type: observer
+      plugin: dsi-aws-sls
+      module: HttpObserver
+      beforeHandler: zuoraCalloutFormatter.js
+      inputs:
+        domain: potato.daysmart.com
+        basePath: zuora
+  - lambdaDecider:
+      type: Decider
+      plugin: dsi-aws-sls
+      module: LambdaDecider
+      inputs:
+        size: 128
+        timeout: 30
+  - httpRequestObserver:
+      type: observer
+      plugin: dsi-aws-sls
+      module: HttpRequestObserver
+      inputs:
+        domain: potato.daysmart.com
+        basePath: api
+  - httpAction:
+      type: action
+      plugin: dsi-aws-sls
+      module: HttpAction
+      inputs:
+        domain: potato.daysmart.com
+        basePath: api
+        url:
+        auth:
+  - httpResponseAction:
+      type: action
+      plugin: dsi-aws-sls
+      module: HttpResponseAction
+      inputs:
+        domain: potato.daysmart.com
+        basePath: api
+  - salesForceRequest:
+      type: action
+      plugin: dsi-aws-sls
+      module: HttpRequestAction
+      handler:
+      auth:
+  - acccountManagementAPIRequest:
+      type: action
+      plugin: dsi-aws-sls
+      module: HttpRequestAction
+      handler:
+      auth:
+  - customerWebhookAction:
+      type: action
+      plugin: dsi-aws-sls
+      module: HttpRequestAction
+      handler:
+  - customerWebhookObserver:
+      type: action
+      plugin: dsi-aws-sls
+      module: HttpResponseAction
+      handler:
+
+Observations:
+  - ExternalCustomer:
+      type: full
+      entity: ExternalCustomer
+      schema: url
+      entityid: data.Id
+  - Customer:
+      type: full
+      entity: Customer
+      schema: url
+      entityid: data.Id
+  - CustomerIdRequired:
+      type: full
+      entity: CustomerIdRequired
+      schema: url
+      entityid: data.Id
+  - ModifySalesForceAccountRequest:
+      type: full
+      entity: SalesForceAccount
+      schema: url
+      entityid: data.Id
+  - SalesForceAccountsModifiedList:
+      type: full
+      entity: SalesForceAccount
+      schema: url
+      entityid: data.Id
+
+      # dynamic properties
+      # ischanged: true/false
+      # traceid:
+      #
+
+Observers:
+  - SalesForceAccountsModifiedList:
+      component: httpRequestObserver
+      result: SalesForceAccountsModifiedList
+      data: { body.accountUpdated }
+      type: modifyCustomer (full, partial, delete, or {actionName})
+  - ModifyCustomerHttpRequest:
+      component: httpRequestObserver
+      path: modifyCustomer
+      result: ExternalCustomer
+      type: modifyCustomer (full, partial, delete, or {actionName})
+  # - AddCustomerHttpRequest:
+  #     component: httpRequestObserver
+  #     path: addCustomer
+  #     result: AddCustomerRequest
+  #     type: addCustomer (full, partial, delete, or {actionName})
+  # - GetCustomerHttpRequest:
+  #     component: httpRequestObserver
+  #     path: getCustomer
+  #     result: com.daysmart.potato.customer::getCustomerRequest
+  #     type: getCustomer (full, partial, delete, or {actionName})
+Deciders:
+  - ExternalCustomerDecider:
+      component: lambdaDecider
+      observation: ExternalCustomer
+      handler: file.function
+      dependentObservations:
+        - name: previousCustomerFull
+          observation: CustomerFull
+          query:
+            equals: id = incoming.id
+        - name: previousCustomerFull
+          observation: CustomerFull
+          query:
+            equals: id = incoming.id
+      results:
+        - Customer
+  - SalesForceAccountsModifiedListDecider:
+      component: lambdaDecider
+      observation: Customer
+      handler: file.function
+      dependentObservations:
+        - name: SalesForceContactModified
+          observation: SalesForceContactModified
+          query:
+            equals: id = incoming.id
+        - name: previousCustomerFull
+          observation: CustomerFull
+          query:
+            equals: id = incoming.id
+      results:
+        - ExternalCustomer
+  - ModifySalesForceAccountRequestDecider:
+      component: lambdaDecider
+      observation: Customer
+      handler: file.function
+      dependentObservations:
+        - name: SalesForceContactModified
+          observation: SalesForceContactModified
+          query:
+            equals: id = incoming.id
+        - name: previousCustomerFull
+          observation: CustomerFull
+          query:
+            equals: id = incoming.id
+      results:
+        - ModifySalesForceAccountRequest
+Actions:
+  - CustomerModifiedWebhookAction:
+      component: customerWebhookAction
+      observation: Customer
+      timeout: 10 seconds
+      results:
+        - CustomerModifiedWebhook
+  - GetCIDForCustomerCreationAction:
+      component: acccountManagementAPIRequest
+      observation: CustomerIdRequired
+      timeout: 10 seconds
+      results:
+        - GetCIDForCustomerCreation
+  - ModifySalesForceAccount:
+      component: salesForceRequest
+      observation: ModifySalesForceAccountRequest
+      timeout: 10 seconds
+      results:
+        - GetCIDForCustomerCreation
+  # -  GetCustomerHttpAction:
+  #     component: httpResponseAction
+  #     observation: com.daysmart.potato.customer::getCustomerRequest
+  #     timeout: 10 seconds
+  #     results:
+  #       -  com.daysmart.potato.customer::getCustomerHttpAction

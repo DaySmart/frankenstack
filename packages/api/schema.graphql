@@ -1,0 +1,113 @@
+type Mutation {
+    sendDeploymentForm(
+        deploymentGuid: ID!
+        template: Template!
+    ): Boolean
+    
+    deploymentUpdate(
+      deploymentGuid: ID!
+      type: String!
+      message: String!
+      moreInfoComponentName: String
+      moreInfoKey: String
+      moreInfoType: String
+    ): DeploymentUpdate
+
+    putUser(
+      userId: String!
+      email: String
+      policies: [String]
+    ): Boolean!
+
+    putPolicy(
+      policyName: String!
+      statements: [Statement]!
+    ): Boolean!
+}
+
+type Subscription {
+  subscribeToDeploymentUpdate(deploymentGuid: ID!): DeploymentUpdate
+    @aws_subscribe(mutations: ["deploymentUpdate"])
+}
+
+type Query {
+	getDeploymentStatus(
+    deploymentGuid: ID
+  ): DeploymentStatus
+
+  getComponentRollbackState(
+    env: String!
+    componentName: String!
+  ): ComponentDeployment
+
+  getResolvedInputs(
+    env: String!
+    component: InputComponent!
+  ): [KeyValue]
+}
+
+type DeploymentUpdate {
+  deploymentGuid: ID!
+  type: String!
+  message: String!
+  moreInfoComponentName: String
+  moreInfoType: String
+  moreInfoKey: String
+}
+
+type ComponentDeployment {
+  deploymentGuid: ID!
+  env: String!
+  name: String!
+  provider: Provider!
+  inputs: [KeyValue]
+  outputs: [KeyValue]
+}
+
+type Provider {
+  name: String!
+  config: [KeyValue]
+}
+
+type KeyValue {
+  name: String!
+  value: String!
+}
+
+input Template {
+    env: String!
+    components: [InputComponent]!
+}
+
+input InputComponent {
+    name: String!
+    provider: ProviderInput!
+    inputs: [KeyValueInput] 
+    outputs: [KeyValueInput]
+}
+
+input ProviderInput {
+	name: String!
+  config: [KeyValueInput]
+}
+
+
+input KeyValueInput {
+    name: String
+    value: String
+}
+
+input Statement {
+  effect: Effect!
+  actions: [String]!
+  resources: [String]!
+}
+
+enum Effect {
+  Allow
+  Deny
+}
+
+type DeploymentStatus {
+  status: String
+}

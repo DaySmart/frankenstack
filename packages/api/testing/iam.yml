@@ -1,0 +1,23 @@
+policies:
+  - name: og:admin
+    statements:
+      - effect: Allow
+        actions:
+          - "*"
+        resources:
+          - "*"
+  - name: og:dev
+    statements:
+      - effect: Deny
+        actions:
+          - "deploy:write"
+          - "secrets:*"
+        resources:
+          - "prod:*"
+
+users:
+  - id: foo.bar
+    email: foo@gmail.com
+    policies:
+      - og:admin
+      - og:dev

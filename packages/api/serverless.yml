@@ -1,0 +1,377 @@
+service:
+  name: frankenstack
+  prune:
+    automatic: true
+    number: 10
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: us-east-1
+  memorySize: 1024
+  timeout: 5
+  stage: ${opt:stage, self:provider.sandbox}
+  environment:
+    CODE_BUILD_PROJECT: { "Ref": "CodeBuildProject" }
+    STAGE: ${opt:stage}
+    PLUGIN_TS_AWS_DYNAMODB_TABLE: ${self:service.name}-${opt:stage}
+    HTTP_ACTION_FUNCTION_NAME: ${self:service.name}-${opt:stage}-httpAction
+    HTTP_ACTION_FUNCTION_ARN: arn:aws:lambda:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:function:${self:service.name}-${opt:stage}-httpAction
+    DECIDER_LAMBDA_FUNCTION_NAME: ${self:service.name}-${opt:stage}-lambdaDecider
+    CUSTOM_ACTOR_FUNCTION_NAME: ${self:service.name}-${opt:stage}-customActor
+    DEBUG: ${self:custom.isProd.${opt:stage}, self:custom.isProd.other}
+    S3_BUCKET: { "Ref": "DeploymentPackageBucket" }
+    JOB_RUN_CLOUDWATCH_LOG_GROUP: ${opt:stage}-${self:service.name}-deployments
+    JOB_RUN_FINISH_SNS_TOPIC: arn:aws:sns:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:${self:service.name}-${opt:stage}-job-run-finished
+    CODE_BUILD_LOG_GROUP: { "Ref": "CodeBuildCloudwatchLogGroup" }
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:*"
+      Resource:
+        - "arn:aws:dynamodb:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:table/${self:provider.environment.PLUGIN_TS_AWS_DYNAMODB_TABLE}"
+        - "arn:aws:dynamodb:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:table/${self:provider.environment.PLUGIN_TS_AWS_DYNAMODB_TABLE}/*"
+    - Effect: "Allow"
+      Action:
+        - "lambda:InvokeFunction"
+      Resource:
+        - arn:aws:lambda:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:function:${self:service}-${opt:stage, self:provider.sandbox}*
+        - arn:aws:lambda:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:function:provider-*
+    - Effect: "Allow"
+      Action: "sqs:SendMessage"
+      Resource: "arn:aws:sqs:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:*"
+    - Effect: "Allow"
+      Action: "ssm:GetParameter"
+      Resource: "arn:aws:ssm:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:parameter/${opt:stage}-${self:service}-amplify-config"
+    - Effect: "Allow"
+      Action:
+        - "appsync:GraphQL"
+        - "appsync:GetGraphqlApi"
+        - "appsync:ListGraphqlApis"
+        - "appsync:ListApiKeys"
+      Resource:
+        {
+          "Fn::Join":
+            [
+              "",
+              [
+                "arn:aws:appsync:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:apis/",
+                { "Fn::GetAtt": ["GraphQlApi", "ApiId"] },
+                "*",
+              ],
+            ],
+        }
+    - Effect: "Allow"
+      Action:
+        - codebuild:StartBuild
+      Resource: { "Fn::GetAtt": ["CodeBuildProject", "Arn"] }
+    - Effect: "Allow"
+      Action:
+        - s3:Get*
+      Resource:
+        - { "Fn::GetAtt": ["DeploymentPackageBucket", "Arn"] }
+        - { "Fn::Join": ["/", [{ "Fn::GetAtt": ["DeploymentPackageBucket", "Arn"] }, "*"]] }
+
+package:
+  excludeDevDependencies: true
+  exclude:
+    - node_modules/
+    - ../../node_modules/
+
+custom:
+  config: ${file(infrastructure/config.${opt:stage, self:provider.sandbox}.yml)}
+  isProd:
+    prod: "true"
+    other: "false"
+  newRelic:
+    accountId: 1464764
+    cloudWatchFilter: "*"
+    enableExtension: true
+  webpack:
+    webpackConfig: "./webpack.config.js"
+    includeModules:
+      forceInclude:
+        - graphql
+      forceExclude:
+        - aws-sdk
+    packagerOptions:
+      scripts:
+        - rm -rf `find node_modules -type d -name aws-sdk`
+
+  prune:
+    automatic: true
+    number: 3
+  jest:
+    testRegex: /__tests__/.*.test.js
+  appSync:
+    name: ${self:service.name}-${opt:stage, self:provider.stage}
+    authenticationType: AWS_IAM
+    schema: schema.graphql
+    logConfig:
+      loggingRoleArn: !GetAtt AppSyncLoggingServiceRole.Arn
+      level: ALL
+    dataSources:
+      - type: AWS_LAMBDA
+        name: GraphqlRequestObserver
+        config:
+          functionName: graphqlRequestObserver
+      - type: NONE
+        name: none
+    mappingTemplates:
+      - dataSource: none
+        type: Mutation
+        field: deploymentUpdate
+        request: mutation.deploymentUpdate.request.vtl
+        response: mutation.deploymentUpdate.response.vtl
+  amplify:
+    - filename: ../appsync-client/src/graphql
+      type: graphql-typescript
+    - filename: ssm
+      type: javascript
+    - filename: ../appsync-client/src/graphql/types.ts
+      type: appsync
+
+functions:
+  httpAction:
+    handler: plugin/httpAction/httpAction.httpAction
+    deadLetter:
+      sqs: ${self:service.name}-${opt:stage}-httpAction-dl-queue
+  customActor:
+    handler: plugin/customActor/customActor.customActorWrapper
+    deadLetter:
+      sqs: ${self:service.name}-${opt:stage}-customActor-dl-queue
+  lambdaDecider:
+    handler: plugin/lambdaDecider/lambdaDecider.lambdaDeciderWrapper
+    deadLetter:
+      sqs: ${self:service.name}-${opt:stage}-lambdaDecider-dl-queue
+  graphqlRequestObserver:
+    handler: plugin/appSyncRequestObserver/appSyncRequestObserver.appSyncRequestObserverWrapper
+    deadLetter:
+      sqs: ${self:service.name}-${opt:stage}-graphqlRequestObserver-dl-queue
+  snsRequestObserver:
+    handler: plugin/snsRequestObserver/snsRequestObserver.snsRequestObserverWrapper
+    deadLetter:
+      sqs: ${self:service.name}-${opt:stage}-snsRequestObserver-dl-queue
+    events:
+      - sns: ${self:service.name}-${opt:stage}-job-run-finished
+  cloudwatchLogObserver:
+    handler: plugin/cloudwatchLogObserver/cloudwatchLogObserver.cloudWatchLogObserverWrapper
+    deadLetter:
+      sqs: ${self:service.name}-${opt:stage}-cloudwatchLogObserver-dl-queue
+    events:
+      - cloudwatchLog: ${opt:stage}-${self:service.name}-deployments
+  migrateDequeueAndUpdate:
+    handler: migration/migrateDequeueAndUpdate.migrateDequeueAndUpdate
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - migrateQueue
+              - Arn
+resources:
+  Conditions:
+    IsProd:
+      Fn::Equals:
+        - ${opt:stage}
+        - prod
+
+  Resources:
+    dynamoDbTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        SSESpecification:
+          SSEEnabled: true
+        TableName: ${self:service.name}-${opt:stage}
+        KeySchema:
+          - AttributeName: PK
+            KeyType: HASH
+          - AttributeName: SK
+            KeyType: RANGE
+        AttributeDefinitions:
+          - AttributeName: PK
+            AttributeType: S
+          - AttributeName: SK
+            AttributeType: S
+          - AttributeName: GSI1PK
+            AttributeType: S
+          - AttributeName: GSI1SK
+            AttributeType: S
+          - AttributeName: GSI2PK
+            AttributeType: S
+          - AttributeName: GSI2SK
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        GlobalSecondaryIndexes:
+          - IndexName: GSI1
+            KeySchema:
+              - AttributeName: GSI1PK
+                KeyType: HASH
+              - AttributeName: GSI1SK
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: GSI2
+            KeySchema:
+              - AttributeName: GSI2PK
+                KeyType: HASH
+              - AttributeName: GSI2SK
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+    GraphqlRequestObserverResolver:
+      Type: "AWS::AppSync::Resolver"
+      Properties:
+        ApiId:
+          Fn::GetAtt: [GraphQlApi, ApiId]
+        TypeName: Mutation
+        FieldName: sendDeploymentForm
+        DataSourceName:
+          Fn::GetAtt: [GraphQlDsGraphqlRequestObserver, Name]
+    PutUserMutationResolver:
+      Type: "AWS::AppSync::Resolver"
+      Properties:
+        ApiId:
+          Fn::GetAtt: [GraphQlApi, ApiId]
+        TypeName: Mutation
+        FieldName: putUser
+        DataSourceName:
+          Fn::GetAtt: [GraphQlDsGraphqlRequestObserver, Name]
+    PutPolicyMutationResolver:
+      Type: "AWS::AppSync::Resolver"
+      Properties:
+        ApiId:
+          Fn::GetAtt: [GraphQlApi, ApiId]
+        TypeName: Mutation
+        FieldName: putPolicy
+        DataSourceName:
+          Fn::GetAtt: [GraphQlDsGraphqlRequestObserver, Name]
+    ComponentRollbackQueryRequestObserverResolver:
+      Type: "AWS::AppSync::Resolver"
+      Properties:
+        ApiId:
+          Fn::GetAtt: [GraphQlApi, ApiId]
+        TypeName: Query
+        FieldName: getComponentRollbackState
+        DataSourceName:
+          Fn::GetAtt: [GraphQlDsGraphqlRequestObserver, Name]
+    ResolveInputsQueryRequestObserverResolver:
+      Type: "AWS::AppSync::Resolver"
+      Properties:
+        ApiId:
+          Fn::GetAtt: [GraphQlApi, ApiId]
+        TypeName: Query
+        FieldName: getResolvedInputs
+        DataSourceName:
+          Fn::GetAtt: [GraphQlDsGraphqlRequestObserver, Name]
+    AppSyncLoggingServiceRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        RoleName: "CloudwatchLogging-${self:custom.appSync.name}-Role"
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Service:
+                  - "appsync.amazonaws.com"
+              Action:
+                - "sts:AssumeRole"
+        Policies:
+          - PolicyName: "CloudwatchLogging-${self:custom.appSync.name}-Policy"
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action:
+                    - "logs:CreateLogGroup"
+                    - "logs:CreateLogStream"
+                    - "logs:PutLogEvents"
+                  Resource:
+                    - "*"
+    CodeBuildProject:
+      Type: AWS::CodeBuild::Project
+      Properties:
+        Name: frankenstack-Deploy-Action-${opt:stage, self:provider.sandbox}
+        Artifacts:
+          Type: NO_ARTIFACTS
+        Environment:
+          ComputeType: BUILD_GENERAL1_MEDIUM
+          Type: LINUX_CONTAINER
+          Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        LogsConfig:
+          CloudWatchLogs:
+            GroupName: !Ref CodeBuildCloudwatchLogGroup
+            Status: ENABLED
+        ServiceRole: !GetAtt CodeBuildRole.Arn
+        Source:
+          Type: S3
+          Location:
+            Fn::Join:
+              - /
+              - - Ref: DeploymentPackageBucket
+                - packages
+    CodeBuildRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Statement:
+            - Action: ["sts:AssumeRole"]
+              Effect: Allow
+              Principal:
+                Service: [codebuild.amazonaws.com]
+          Version: "2012-10-17"
+        Path: /
+        Policies:
+          - PolicyName: CodeBuildAccess
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Action: "*"
+                  Effect: Allow
+                  Resource: "*"
+    CodeBuildCloudwatchLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: ${opt:stage}-${self:service.name}-deployments
+    DeploymentPackageBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: !Join
+          - "-"
+          - - ${opt:stage, self:provider.sandbox}-frankenstack-deployment-packages
+            - !Select
+              - 0
+              - !Split
+                - "-"
+                - !Select
+                  - 2
+                  - !Split
+                    - "/"
+                    - !Ref "AWS::StackId"
+
+    migrateQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${self:service.name}-${opt:stage}-migrateQueue
+        RedrivePolicy:
+          deadLetterTargetArn:
+            Fn::GetAtt:
+              - migrateQueueDLQ
+              - Arn
+          maxReceiveCount: 3
+    migrateQueueDLQ:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${self:service.name}-${opt:stage}-migrateQueueDLQ
+        MessageRetentionPeriod: 1209600
+
+plugins:
+  - serverless-prune-plugin
+  - serverless-newrelic-lambda-layers
+  - serverless-plugin-git-variables
+  - serverless-plugin-lambda-dead-letter
+  - serverless-mocha-plugin
+  - serverless-appsync-plugin
+  - aws-amplify-serverless-plugin
+  - serverless-webpack
