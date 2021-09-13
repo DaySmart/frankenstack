@@ -1,0 +1,14 @@
+env: provider
+components:
+  - name: app-params
+    provider:
+      name: cdk
+      config:
+        constructPath: index
+        region: "us-east-1"
+        buildDir: "app-params"
+    inputs:
+      providerName: app-params
+      compute: LAMBDA
+      handler: handler
+      entry: lib/handler.ts
