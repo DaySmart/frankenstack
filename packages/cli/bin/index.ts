@@ -10,7 +10,7 @@ const run = async () => {
     const deploy = new Deployer(command, file, args);
     try {
         await deploy.run();
-    } catch(err) {
+    } catch(err: any) {
         console.error("ERROR:", err.message);
         process.exit(1);
     }

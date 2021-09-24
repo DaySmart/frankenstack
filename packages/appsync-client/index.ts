@@ -1,25 +1,21 @@
-// import Amplify from 'aws-amplify';
-// import AWSAppSyncClient, { AUTH_TYPE } from 'aws-appsync';
 import { sendDeploymentForm, deploymentUpdate, putPolicy, putUser } from './src/graphql/mutations';
 import gql from 'graphql-tag';
 import { subscribeToDeploymentUpdate } from './src/graphql/subscriptions';
-import { Observable } from '@apollo/client/core'
+import { Observable } from 'apollo-client/util/Observable'
 import { DeploymentUpdateMutationVariables, InputComponent, PutPolicyMutationVariables, PutUserMutationVariables, Template } from './src/graphql/types';
 import { FetchResult } from 'apollo-link';
 import { getComponentRollbackStateFull } from './src/graphql/customQueries';
 import { getResolvedInputs } from './src/graphql/queries';
-import { AuthOptions, AUTH_TYPE, createAuthLink } from 'aws-appsync-auth-link';
-import { createSubscriptionHandshakeLink } from 'aws-appsync-subscription-link';
-import { HttpLink, createHttpLink } from '@apollo/client/link/http';
-import { ApolloClient } from '@apollo/client/core'
-import { InMemoryCache } from '@apollo/client/core';
-// require('isomorphic-fetch');
+import { AuthOptions, AUTH_TYPE } from 'aws-appsync-auth-link';
+import { AWSAppSyncClient } from 'aws-appsync'
+const { AppSyncRealTimeSubscriptionHandshakeLink } = require('aws-appsync-subscription-link/lib/realtime-subscription-handshake-link');
 
 export class EnvironmentServiceAppSyncClient {
-    public client: ApolloClient<any>;
+
+    public client: AWSAppSyncClient<any>;
 
     constructor(awsconfig: any, awscreds: any) {
-        // Amplify.configure(awsconfig);
+
         const url = awsconfig.aws_appsync_graphqlEndpoint;
         const region = awsconfig.aws_appsync_region;
         const auth: AuthOptions = {
@@ -27,16 +23,20 @@ export class EnvironmentServiceAppSyncClient {
             credentials: awscreds
         }
 
-        const httpLink = createHttpLink({ uri: url });
+        //Hack for https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/619
+        const oldStartSubscription = AppSyncRealTimeSubscriptionHandshakeLink.prototype._startSubscriptionWithAWSAppSyncRealTime;
+        AppSyncRealTimeSubscriptionHandshakeLink.prototype._startSubscriptionWithAWSAppSyncRealTime = function(a: any) {
+            if (a.options) {
+                delete a.options.graphql_headers;
+            }
+            return oldStartSubscription.call(this, a);
+        };
 
-        const link = HttpLink.from([
-            createAuthLink({ url, region, auth }),
-            createSubscriptionHandshakeLink(url, httpLink)
-        ]);
-          
-        this.client = new ApolloClient({
-            link,
-            cache: new InMemoryCache()
+        this.client = new AWSAppSyncClient({
+            url,
+            region,
+            auth,
+            disableOffline: true
         });
     }
 
