@@ -8,7 +8,7 @@ import { getComponentRollbackStateFull } from './src/graphql/customQueries';
 import { getResolvedInputs } from './src/graphql/queries';
 import { AuthOptions, AUTH_TYPE } from 'aws-appsync-auth-link';
 import { AWSAppSyncClient } from 'aws-appsync'
-const { AppSyncRealTimeSubscriptionHandshakeLink } = require('aws-appsync/node_modules/aws-appsync-subscription-link/lib/realtime-subscription-handshake-link');
+const { AppSyncRealTimeSubscriptionHandshakeLink } = require('aws-appsync-subscription-link/lib/realtime-subscription-handshake-link');
 
 export class EnvironmentServiceAppSyncClient {
 

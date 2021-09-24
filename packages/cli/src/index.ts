@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { CredentialProviderChain } from 'aws-sdk';
 import AWS from 'aws-sdk';
 const fs = require('fs');
 import { EnvironmentServiceAppSyncClient } from '@daysmart/frankenstack-appsync-client'
@@ -115,7 +114,7 @@ export default class Deployer {
 
         const client = new EnvironmentServiceAppSyncClient(
             awsconfig,
-            await (new CredentialProviderChain()).resolvePromise()
+            creds
         )
 
         const rollbackComponentResp = await client.getComponentRollback(environment, componentName);
@@ -201,7 +200,7 @@ export default class Deployer {
 
         const client = new EnvironmentServiceAppSyncClient(
             awsconfig,
-            await (new CredentialProviderChain()).resolvePromise()
+            creds
         )
 
         if(template.policies) {
