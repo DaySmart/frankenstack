@@ -71,6 +71,7 @@ export default class Deployer {
     async deploy(file: string) {
         const template: Template = this.parseComponentTemplate(file);
         console.log('template', JSON.stringify(template, null, 2));
+        console.log('Created deployment', this.deploymentGuid);
         const repoName = process.cwd();
         const creds = await defaultProvider({})();
         AWS.config.credentials = creds;
