@@ -1,0 +1,24 @@
+{
+  "name": "app-params",
+  "version": "0.1.0",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@aws-cdk/aws-iam": "1.102.0",
+    "@aws-cdk/core": "1.102.0",
+    "@daysmart/frankenstack-base-provider": "file:../base"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^15.0.2",
+    "aws-sdk": "^2.904.0",
+    "esbuild": "^0.11.19",
+    "typescript": "^4.2.4"
+  }
+}

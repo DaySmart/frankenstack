@@ -1,17 +1,18 @@
-import { SNS } from 'aws-sdk';
+import { SNS, SSM } from 'aws-sdk';
 import { Logger } from './Logger';
 
 export class Provider {
     public deploymentGuid: string;
     public environment: string;
     public componentName: string;
-    public inputs: Array<{Key: string, Value: string}>;
-    public outputs: Array<{Key: string, Value: string}>;
+    public inputs: Array<{ Key: string, Value: string }>;
+    public outputs: Array<{ Key: string, Value: string }>;
     public result: boolean;
     public jobRunGuid: string;
     public logGroup: string;
     public logger: Logger;
     sns = new SNS();
+    ssm = new SSM();
 
     constructor(event: any) {
         this.deploymentGuid = event.deploymentGuid;
@@ -25,7 +26,28 @@ export class Provider {
         console.log(event);
     }
 
-    async provisionComponent(): Promise<void> {}
+    async decryptInputs() {
+        for (let i = 0; i < this.inputs.length; i++) {
+            if (this.inputs[i].Value.startsWith('ssm:')) {
+                const resp = await this.ssm.getParameter({
+                    Name: this.inputs[i].Value.replace('ssm:', ''),
+                    WithDecryption: true
+                }).promise();
+
+                if (resp.Parameter) {
+                    this.inputs[i].Value = resp.Parameter.Value as string;
+                } else {
+                    this.result = false;
+                    await this.sendResponse();
+                    throw Error(`Could not find Specified Parameter => ${this.inputs[i].Value}`);
+                }
+            }
+        }
+
+
+    }
+
+    async provisionComponent(): Promise<void> { }
 
     async sendResponse() {
         let resp = {

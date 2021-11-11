@@ -1,14 +1,14 @@
 env: provider
 components:
-  - name: secrets
+  - name: app-params
     provider:
       name: cdk
       config:
         constructPath: index
         region: "us-east-1"
-        buildDir: "secrets"
+        buildDir: "app-params"
     inputs:
-      providerName: secrets
+      providerName: app-params
       compute: LAMBDA
       handler: handler
       entry: lib/handler.ts
