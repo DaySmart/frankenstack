@@ -2,6 +2,7 @@ import aws from "aws-sdk";
 import { filters, Logger, Query, Repository, ObservationFilterFunction } from "o18k-ts-aws";
 import { ComponentDeployment } from "../../generated/Entities/ComponentDeployment";
 import { IEntityObservation } from "../../generated/Entities/IEntityObservation";
+import { JobRun } from "../../generated/Entities/JobRun";
 const docClient = new aws.DynamoDB.DocumentClient();
 const dynamoDbTable = process.env.PLUGIN_TS_AWS_DYNAMODB_TABLE as string;
 
@@ -182,6 +183,12 @@ export class DynamoDbRepository implements Repository {
         if (componentDeployment.data.Env && componentDeployment.data.Name) {
           dynamoDbItem.GSI2PK = `ET#${componentDeployment.entity}#TY#${componentDeployment.type}#D2#${componentDeployment.data.Env}:${componentDeployment.data.Name}`;
           dynamoDbItem.GSI2SK = "TM#" + componentDeployment.time;
+        }
+      } else if (observation.entity == JobRun.ENTITY_NAME) {
+        const jobRun = observation as Observation2<JobRun.EntityObservation>;
+        if (jobRun.data.AWSResourceArn) {
+          dynamoDbItem.GSI2PK = `ET#${jobRun.entity}#TY#${jobRun.type}#D2#${jobRun.data.AWSResourceArn}`;
+          dynamoDbItem.GSI2SK = "TM#" + jobRun.time;
         }
       }
 

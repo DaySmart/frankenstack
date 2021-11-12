@@ -12,6 +12,7 @@ import DeploymentUpdateDecider_ComponentHandler from "./generated/Deciders/Deplo
 import DeploymentUpdateDecider_DeploymentHandler from "./generated/Deciders/DeploymentUpdateDecider_DeploymentHandler";
 import DeploymentUpdateDecider_JobRunHandler from "./generated/Deciders/DeploymentUpdateDecider_JobRunHandler";
 import DeploymentUpdateDecider_JobRunUpdateHandler from "./generated/Deciders/DeploymentUpdateDecider_JobRunUpdateHandler";
+import JobRunFinishedDecider_ProviderFailureHandler from "./generated/Deciders/JobRunFinishedDecider_ProviderFailureHandler";
 import PolicyDecider_PutPolicyMutationHandler from "./generated/Deciders/PolicyDecider_PutPolicyMutationHandler";
 import ProviderDecider_ComponentHandler from "./generated/Deciders/ProviderDecider_ComponentHandler";
 import UserDecider_PutUserMutationHandler from "./generated/Deciders/UserDecider_PutUserMutationHandler";
@@ -27,6 +28,7 @@ import { JobRunFinished } from "./generated/Entities/JobRunFinished";
 import { JobRunUpdate } from "./generated/Entities/JobRunUpdate";
 import { Policy } from "./generated/Entities/Policy";
 import { Provider } from "./generated/Entities/Provider";
+import { ProviderFailure } from "./generated/Entities/ProviderFailure";
 import { PutPolicyMutation } from "./generated/Entities/PutPolicyMutation";
 import { PutUserMutation } from "./generated/Entities/PutUserMutation";
 import { ResolvedInputsQuery } from "./generated/Entities/ResolvedInputsQuery";
@@ -35,6 +37,7 @@ import ComponentRollbackQueryHandler from "./generated/Observers/ComponentRollba
 import { ComponentRollbackQueryResponseHandler } from "./generated/Observers/ComponentRollbackQueryResponseHandler";
 import JobRunFinishedHandler from "./generated/Observers/JobRunFinishedHandler";
 import JobRunResponseHandler from "./generated/Observers/JobRunResponseHandler";
+import ProviderFailureHandler from "./generated/Observers/ProviderFailureHandler";
 import PutPolicyMutationHandler from "./generated/Observers/PutPolicyMutationHandler";
 import PutUserMutationHandler from "./generated/Observers/PutUserMutationHandler";
 import ResolvedInputsQueryHandler from "./generated/Observers/ResolvedInputsQueryHandler";
@@ -45,6 +48,7 @@ import { AppSyncRequestResponseActorModuleInstance } from "./moduleInstances/App
 import { CloudWatchLogObserverModuleInstance } from "./moduleInstances/CloudWatchLogObserverModuleInstance";
 import { CustomActorModuleInstance } from "./moduleInstances/CustomActorModuleInstance";
 import { CustomResponseObserverModuleInstance } from "./moduleInstances/CustomResponseObserverModuleInstance";
+import { EventBridgeObserverModuleInstance } from "./moduleInstances/EventBridgeObserverModuleIntsance";
 import { LambdaDeciderModuleInstance } from "./moduleInstances/LambdaDeciderModuleInstance";
 import { LoggerModuleInstance } from "./moduleInstances/LoggerModuleInstance";
 import { SnsTopicObserverModuleInstance } from "./moduleInstances/SnsTopicObserverModuleInstance";
@@ -293,6 +297,29 @@ export function getTemplate(): Template {
           }
         ]
       },
+      {
+        entity: ProviderFailure.ENTITY_NAME,
+        type: ProviderFailure.TYPE,
+        deciderCellsThatCareAboutMe: [
+          {
+            entity: JobRunFinished.ENTITY_NAME,
+            type: JobRunFinished.TYPE,
+            cell: new LambdaDeciderModuleInstance(
+              ProviderFailure.ENTITY_NAME,
+              ProviderFailure.TYPE,
+              JobRunFinished.ENTITY_NAME,
+              JobRunFinished.TYPE,
+              [
+                {
+                  filter: filters.TOP_10_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_GSI2_IN_LIST_FROM_FUNCTION,
+                  filterValues: [Component.ENTITY_NAME, Component.TYPE, observation => [`${observation.data.Env}:${observation.data.Name}`]]
+                }
+              ],
+              JobRunFinishedDecider_ProviderFailureHandler
+            )
+          }
+        ]
+      },
       // {
       //   entity: JobRun.ENTITY_NAME,
       //   type: JobRun.TYPE
@@ -326,6 +353,15 @@ export function getTemplate(): Template {
               DeploymentUpdateDecider_JobRunUpdateHandler,
               false
             )
+          }
+        ]
+      },
+      {
+        entity: ProviderFailure.ENTITY_NAME,
+        type: ProviderFailure.TYPE,
+        observers: [
+          {
+            cell: new EventBridgeObserverModuleInstance(ProviderFailureHandler)
           }
         ]
       },

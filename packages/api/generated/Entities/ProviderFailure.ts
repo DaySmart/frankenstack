@@ -1,30 +1,21 @@
 import { IEntityObservation } from './IEntityObservation';
 
-export namespace JobRun {
-    export const ENTITY_NAME = "daysmart.environmentservice.api.jobrun";
+export namespace ProviderFailure {
+    export const ENTITY_NAME = "daysmart.environmentservice.api.providerfailure";
 
     export const SCHEMA = "schemaurl";
     export const TYPE = "full";
     export const DATAREF = "datarefurl";
 
-    type DeploymentType = "LAMBDA" | "CODEBUILD" | "ECS";
-
     export interface DataSchema {
-        JobRunGuid: string;
-        DeploymentGuid: string;
-        ComponentName: string;
-        Type: DeploymentType;
-        CloudWatchLogGroup: string;
-        CloudWatchLogStream: string;
-        AWSResourceArn?: string;
+        AWSResourceArn: string;
         Error?: string;
-        Env: string;
     }
 
     export class EntityObservation implements IEntityObservation {
         constructor(data: DataSchema) {
             this.data = data;
-            this.entityid = this.data.JobRunGuid;
+            this.entityid = this.data.AWSResourceArn;
         }
 
         entity = ENTITY_NAME;

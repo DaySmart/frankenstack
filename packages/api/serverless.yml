@@ -168,6 +168,22 @@ functions:
             Fn::GetAtt:
               - migrateQueue
               - Arn
+  eventBridgeRequestObserver:
+    handler: plugin/eventBridgeRequestObserver/eventBridgeRequestObserver.eventBridgeRequestObserverWrapper
+    events:
+      - eventBridge:
+          pattern:
+            source:
+              - aws.codebuild
+            detail-type:
+              - CodeBuild Build State Change
+            detail:
+              build-status:
+                - STOPPED
+                - FAILED
+              project-name:
+                - { "Ref": "CodeBuildProject" }
+
 resources:
   Conditions:
     IsProd:

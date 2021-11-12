@@ -99,5 +99,5 @@ export default async function JobRunActor(
     type = "CODEBUILD";
   }
 
-  return { jobRunGuid, type, awsResourceArn, error };
+  return { jobRunGuid, type, awsResourceArn, error, env:data.Env };
 }
