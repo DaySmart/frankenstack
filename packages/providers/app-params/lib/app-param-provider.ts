@@ -3,7 +3,10 @@ import { Provider } from "@daysmart/frankenstack-base-provider/assets/Provider";
 
 export class AppParamsProvider extends Provider {
     async provisionComponent() {
-        let client = new SSM();
+        let client = new SSM({ 
+			region: this.region, 
+			credentialProvider: this.awsCredentialProviderChain
+		});
         
         try {
             const paramName = `${this.environment}-${this.componentName}`;

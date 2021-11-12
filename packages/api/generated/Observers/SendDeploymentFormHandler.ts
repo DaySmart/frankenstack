@@ -18,6 +18,7 @@ export default function(event, _context): Observation2<IEntityObservation>[] {
         Name: component.name,
         Provider: {
           Name: component.provider.name,
+		  //isn't this what we need? \/
           Config: component.provider.config
             ? component.provider.config.map(config => {
                 return {

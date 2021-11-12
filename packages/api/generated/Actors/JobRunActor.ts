@@ -47,8 +47,9 @@ export default async function JobRunActor(
             environment: observation.data.Env,
             componentName: observation.data.Name,
             jobRunGuid: jobRunGuid,
+			componentProvider: data.Provider,
             inputs: observation.data.Inputs,
-            logGroup: process.env.JOB_RUN_CLOUDWATCH_LOG_GROUP
+            logGroup: process.env.JOB_RUN_CLOUDWATCH_LOG_GROUP,
           })
         })
         .promise();

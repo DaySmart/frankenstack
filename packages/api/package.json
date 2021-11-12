@@ -53,7 +53,6 @@
     "serverless-domain-manager": "^3.3.1",
     "serverless-jest-plugin": "^0.3.0",
     "serverless-newrelic-lambda-layers": "^0.2.5",
-    "serverless-plugin-aws-alerts": "^1.4.0",
     "serverless-plugin-git-variables": "^4.0.0",
     "serverless-plugin-lambda-dead-letter": "^1.2.1",
     "serverless-prune-plugin": "^1.4.2",
