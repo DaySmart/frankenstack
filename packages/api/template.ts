@@ -312,7 +312,7 @@ export function getTemplate(): Template {
               [
                 {
                   filter: filters.TOP_10_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_GSI2_IN_LIST_FROM_FUNCTION,
-                  filterValues: [Component.ENTITY_NAME, Component.TYPE, observation => [`${observation.data.Env}:${observation.data.Name}`]]
+                  filterValues: [JobRun.ENTITY_NAME, JobRun.TYPE, observation => [observation.data.AWSResourceArn]]
                 }
               ],
               JobRunFinishedDecider_ProviderFailureHandler

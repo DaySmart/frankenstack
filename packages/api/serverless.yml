@@ -96,7 +96,7 @@ custom:
         - aws-sdk
     packagerOptions:
       scripts:
-        - rm -rf `find node_modules -type d -name aws-sdk`
+        # - rm -rf `find node_modules -type d -name aws-sdk`
 
   prune:
     automatic: true
