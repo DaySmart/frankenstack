@@ -47,7 +47,7 @@ export default async function JobRunActor(
             environment: observation.data.Env,
             componentName: observation.data.Name,
             jobRunGuid: jobRunGuid,
-			componentProvider: data.Provider,
+            componentProvider: data.Provider,
             inputs: observation.data.Inputs,
             logGroup: process.env.JOB_RUN_CLOUDWATCH_LOG_GROUP,
           })
@@ -89,9 +89,9 @@ export default async function JobRunActor(
         },
         console.log
       );
-  
+
       awsResourceArn = codeBuildTriggerResponse.build?.arn;
-      
+
       console.log("[action] codeBuildTriggerResponse", { codeBuildTriggerResponse });
     } catch(err) {
       console.error(err);

@@ -14,7 +14,6 @@ export namespace Provider {
     Version: string;
     Compute: ProviderCompute;
     ResourceArn: string;
-	//add property for custom configs
   }
 
   export class EntityObservation implements IEntityObservation {
