@@ -3,11 +3,19 @@ import { Provider } from "@daysmart/frankenstack-base-provider/assets/Provider";
 
 export class AppParamsProvider extends Provider {
     async provisionComponent() {
-        let client = new SSM({ 
-			region: this.region, 
-			credentialProvider: this.awsCredentialProviderChain
-		});
-        
+        let client: SSM;
+        if (this.region) {
+            client = new SSM({
+                region: this.region,
+            })
+        } else {
+            client = new SSM();
+        }
+
+        if (this.awsCredentials){
+            client.config.credentials = this.awsCredentials;
+        }
+
         try {
             const paramName = `${this.environment}-${this.componentName}`;
             const resp = await client.putParameter({
@@ -16,7 +24,7 @@ export class AppParamsProvider extends Provider {
                 Type: 'SecureString',
                 Overwrite: true
             }).promise();
-    
+
             console.log(resp);
 
             this.outputs.push({

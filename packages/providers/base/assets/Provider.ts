@@ -1,6 +1,11 @@
 import { SNS, SSM, Credentials, CredentialProviderChain } from 'aws-sdk';
 import { Logger } from './Logger';
 
+interface Account {
+    accountId: string;
+    credentials: string;
+}
+
 export class Provider {
     public deploymentGuid: string;
     public environment: string;
@@ -12,8 +17,9 @@ export class Provider {
     public jobRunGuid: string;
     public logGroup: string;
     public logger: Logger;
+    public account: Account;
 
-	public awsCredentialProviderChain: CredentialProviderChain;
+	public awsCredentials: Credentials;
 	public region: string;
 
     sns = new SNS();
@@ -28,17 +34,17 @@ export class Provider {
         this.inputs = event.inputs;
         this.logGroup = event.logGroup;
 		this.config = event.componentProvider.Config;
+        this.account = event.componentProvider.Account;
         this.outputs = [];
         this.logger = new Logger(this.logGroup, this.jobRunGuid);
     }
 
     async setAwsAccountCredentials() {
-		const accountConfig = this.config.find(c => c.Key === 'account');
-		if (accountConfig) {
-			console.log('getAwsAccountCredentials Account config found. Grabbing parameter store entry', accountConfig);
+		if (this.account && this.account.accountId && this.account.credentials) {
+			console.log('getAwsAccountCredentials Account config found. Grabbing parameter store entry', { account: this.account });
 			const ssm = new SSM();
 			const param = await ssm.getParameter({
-				Name: accountConfig.Value.replace('ssm:', ''),
+				Name: this.account.credentials.replace('ssm:', ''),
 				WithDecryption: true
 			}).promise();
 
@@ -46,16 +52,10 @@ export class Provider {
 				const parsedParam = JSON.parse(param.Parameter.Value);
 				console.log('getAwsAccountCredentials Access Key ID from Parameter', { AWS_ACCESS_KEY_ID: parsedParam.AWS_ACCESS_KEY_ID });
 
-				const credentialProviders = [
-					() => {
-						return new Credentials({
-						   accessKeyId: parsedParam.AWS_ACCESS_KEY_ID,
-						   secretAccessKey: parsedParam.AWS_SECRET_ACCESS_KEY
-						})
-					}
-				];
-
-				this.awsCredentialProviderChain = new CredentialProviderChain(credentialProviders)
+				this.awsCredentials = new Credentials({
+                    accessKeyId: parsedParam.AWS_ACCESS_KEY_ID,
+                    secretAccessKey: parsedParam.AWS_SECRET_ACCESS_KEY
+                });
 			}
 		}
 
@@ -63,7 +63,7 @@ export class Provider {
 		if (regionConfig) {
 			this.region = regionConfig.Value;
 		}
-	} 
+	}
 
     async decryptInputs() {
         for (let i = 0; i < this.inputs.length; i++) {

@@ -1,0 +1,11 @@
+env: test
+components:
+  - name: simple-app-params
+    provider:
+      name: app-params
+      # config:
+      #   account: ${og-legacy-main:aws}
+      #   region: us-east-1
+    inputs:
+      foo: bar
+      key: value4
