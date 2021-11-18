@@ -17,7 +17,7 @@ export class AppParamsProvider extends Provider {
         }
 
         try {
-            const paramName = `${this.environment}-${this.componentName}`;
+            const paramName = `/${this.environment}/${this.componentName}`;
             const resp = await client.putParameter({
                 Name: paramName,
                 Value: JSON.stringify(Object.assign({}, ...this.inputs.map(input => {return {[input.Key]: input.Value}}))),
