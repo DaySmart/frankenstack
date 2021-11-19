@@ -26,7 +26,6 @@ export class Provider {
     ssm = new SSM();
 
     constructor(event: any) {
-        console.log(event);
         this.deploymentGuid = event.deploymentGuid;
         this.environment = event.environment;
         this.componentName = event.componentName;
