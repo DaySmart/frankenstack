@@ -93,7 +93,7 @@ export default class Deployer {
         });
         
         archive.pipe(output);
-        archive.glob('**', {ignore: 'node_modules/**'});
+        archive.glob('**', {ignore: 'node_modules/**', dot: true});
         archive.finalize();
 
         const upload = new Upload({
