@@ -70,7 +70,13 @@ provider:
         - s3:Get*
       Resource:
         - { "Fn::GetAtt": ["DeploymentPackageBucket", "Arn"] }
-        - { "Fn::Join": ["/", [{ "Fn::GetAtt": ["DeploymentPackageBucket", "Arn"] }, "*"]] }
+        - {
+            "Fn::Join":
+              [
+                "/",
+                [{ "Fn::GetAtt": ["DeploymentPackageBucket", "Arn"] }, "*"],
+              ],
+          }
 
 package:
   excludeDevDependencies: true
@@ -371,7 +377,6 @@ plugins:
   - serverless-newrelic-lambda-layers
   - serverless-plugin-git-variables
   - serverless-plugin-lambda-dead-letter
-  - serverless-mocha-plugin
   - serverless-appsync-plugin
   - aws-amplify-serverless-plugin
   - serverless-webpack

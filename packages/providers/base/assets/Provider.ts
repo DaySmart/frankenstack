@@ -1,16 +1,27 @@
-import { SNS, SSM } from 'aws-sdk';
+import { SNS, SSM, Credentials, CredentialProviderChain } from 'aws-sdk';
 import { Logger } from './Logger';
+
+interface Account {
+    accountId: string;
+    credentials: string;
+}
 
 export class Provider {
     public deploymentGuid: string;
     public environment: string;
     public componentName: string;
+    public config: Array<{ Key: string, Value: string }>;
     public inputs: Array<{ Key: string, Value: string }>;
     public outputs: Array<{ Key: string, Value: string }>;
     public result: boolean;
     public jobRunGuid: string;
     public logGroup: string;
     public logger: Logger;
+    public account: Account;
+
+    public awsCredentials: Credentials;
+    public region: string;
+
     sns = new SNS();
     ssm = new SSM();
 
@@ -21,9 +32,36 @@ export class Provider {
         this.jobRunGuid = event.jobRunGuid;
         this.inputs = event.inputs;
         this.logGroup = event.logGroup;
+        this.config = event.componentProvider.Config;
+        this.account = event.componentProvider.Account;
         this.outputs = [];
         this.logger = new Logger(this.logGroup, this.jobRunGuid);
-        console.log(event);
+    }
+
+    async setAwsAccountCredentials() {
+        if (this.account && this.account.accountId && this.account.credentials) {
+            console.log('getAwsAccountCredentials Account config found. Grabbing parameter store entry', { account: this.account });
+            const ssm = new SSM();
+            const param = await ssm.getParameter({
+                Name: this.account.credentials.replace('ssm:', ''),
+                WithDecryption: true
+            }).promise();
+
+            if (param && param.Parameter && param.Parameter.Value) {
+                const parsedParam = JSON.parse(param.Parameter.Value);
+                console.log('getAwsAccountCredentials Access Key ID from Parameter', { AWS_ACCESS_KEY_ID: parsedParam.AWS_ACCESS_KEY_ID });
+
+                this.awsCredentials = new Credentials({
+                    accessKeyId: parsedParam.AWS_ACCESS_KEY_ID,
+                    secretAccessKey: parsedParam.AWS_SECRET_ACCESS_KEY
+                });
+            }
+        }
+
+        const regionConfig = this.config.find(c => c.Key === 'region');
+        if (regionConfig) {
+            this.region = regionConfig.Value;
+        }
     }
 
     async decryptInputs() {
@@ -43,8 +81,6 @@ export class Provider {
                 }
             }
         }
-
-
     }
 
     async provisionComponent(): Promise<void> { }
