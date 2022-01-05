@@ -37,7 +37,9 @@ export function ComponentRollbackQueryResponseHandler(
     provider: {
       name: componentDeployment.data.Provider.Name,
       config: componentDeployment.data.Provider.Config
-        ? componentDeployment.data.Provider.Config.map(configItem => {
+        ? componentDeployment.data.Provider.Config.filter(configItem => {
+          return configItem.Key && configItem.Value 
+        }).map(configItem => {
             return {
               name: configItem.Key,
               value: configItem.Value
