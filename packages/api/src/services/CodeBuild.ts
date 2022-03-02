@@ -24,6 +24,7 @@ export module CodeBuildClient {
                 projectName: process.env.CODE_BUILD_PROJECT as string,
                 buildspecOverride: generateBuildSpec(params.buildDir),
                 sourceLocationOverride: `${S3_BUCKET}/${artifactGuid}.zip`,
+                privilegedModeOverride: true,
                 environmentVariablesOverride: [
                     {name: 'COMPONENT_PROVIDER', value: params.componentProvider},
                     {name: 'COMPONENT_ENVIRONMENT', value: params.componentEnvironment},
@@ -54,7 +55,7 @@ export module CodeBuildClient {
         } catch(err) {
             log("[action] response", { err });
             throw err;
-        }  
+        }
     }
 
     function generateBuildSpec(buildDir?: string): string {
@@ -71,13 +72,13 @@ export module CodeBuildClient {
                         nodejs: 12
                     },
                     commands: buildDir ? [
-                        `cd ${buildDir}`, 
+                        `cd ${buildDir}`,
                         'npm install'
                     ] : ['npm install']
                 },
                 'pre_build': {
                     commands: [
-                        `npm install -g git://github.com/DaySmart/deployer.git#${deployerBranchName}`
+                        `npm install -g git+https://github.com/DaySmart/deployer.git#${deployerBranchName}`
                     ]
                 },
                 build: {

@@ -1,11 +1,12 @@
 {
-  "name": "@daysmart/frankenstack-provider-secrets",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "app-params",
+  "version": "0.1.0",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "watch": "tsc -w",
+    "test": "jest"
   },
   "dependencies": {
     "@aws-cdk/aws-iam": "1.102.0",

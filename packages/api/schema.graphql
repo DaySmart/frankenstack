@@ -99,8 +99,8 @@ input ProviderInput {
 
 
 input KeyValueInput {
-    name: String
-    value: String
+    name: String!
+    value: String!
 }
 
 input Statement {
