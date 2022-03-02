@@ -194,6 +194,9 @@ export function resolveReferenceFromComponentObservation(
                     const output = observation.data.Outputs?.find(out => out.Key === variableName);
                     if(output) {
                         resolvedInputs[j].Value = output.Value
+                    } else if (observation.data.Status === 'DELETED') { 
+                        resolvedInputs[j].FailedLookupStatus = 'DEPLOYMENT_FAILED';
+                        resolvedInputs[j].FailedLookupMessage = `Dependent component ${componentName} is in deleted state`;
                     } else {
                         resolvedInputs[j].FailedLookupStatus = 'DEPLOYMENT_FAILED';
                         resolvedInputs[j].FailedLookupMessage = `Dependent component ${componentName} was missing output value for ${variableName}`;

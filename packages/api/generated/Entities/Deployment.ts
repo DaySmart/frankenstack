@@ -10,6 +10,7 @@ export namespace Deployment {
     export type DeploymentStatus = 
         "DEPLOY_IN_PROGRESS" | 
         "DEPLOYED" | 
+        "DELETED" |
         "DEPLOYMENT_FAILED";
 
     export type ComponentDeploymentStatus = DeploymentStatus |
@@ -25,6 +26,7 @@ export namespace Deployment {
         Finish?: string;
         User: string;
         Status: DeploymentStatus;
+        Method?: string;
     }
 
     export interface Component {

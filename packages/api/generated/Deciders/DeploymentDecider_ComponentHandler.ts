@@ -66,10 +66,10 @@ export default function DeploymentDecider_ComponentHandler(
     Status: latestDeployment.data.Status,
   };
 
-  if(deployment.Components.every(component => component.Status === 'DEPLOYED')) {
+  if(deployment.Components.every(component => component.Status === 'DEPLOYED' || component.Status === 'DELETED')) {
     deployment.Status = 'DEPLOYED'
     deployment.Finish = new Date().toISOString();
-  } else if (deployment.Components.every(component => ["DEPLOYED", "DEPLOYMENT_FAILED", "UNAUTHORIZED"].includes(component.Status as string))) {
+  } else if (deployment.Components.every(component => ["DEPLOYED", "DEPLOYMENT_FAILED", "UNAUTHORIZED", "DELETED"].includes(component.Status as string))) {
     deployment.Status = 'DEPLOYMENT_FAILED'
     deployment.Finish = new Date().toISOString();
   }

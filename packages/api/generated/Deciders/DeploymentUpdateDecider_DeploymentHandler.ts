@@ -13,7 +13,7 @@ export default function DeploymentUpdateDecider_DeploymentHandler(
   const decisions: Observation2<IEntityObservation>[] = [];
 
   const data = observation.data;
-  const allComponentsDeployed = data.Components.every(component => ["DEPLOYED", "DEPLOYMENT_FAILED", "UNAUTHORIZED"].includes(component.Status as string));
+  const allComponentsDeployed = data.Components.every(component => ["DEPLOYED", "DEPLOYMENT_FAILED", "UNAUTHORIZED", "DELETED"].includes(component.Status as string));
   const deploymentFailed = data.Components.filter(component => ["DEPLOYMENT_FAILED", "UNAUTHORIZED"].includes(component.Status as string)).length > 0;
 
   if (allComponentsDeployed) {

@@ -85,6 +85,7 @@ export default async function JobRunActor(
           deploymentGuid: data.DeploymentGuid,
           buildDir: buildDir ? buildDir : undefined,
           artifactOverideGuid: artifactOverideGuid ? artifactOverideGuid : undefined,
+          Method: data.Method,
         },
         console.log
       );

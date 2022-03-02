@@ -96,7 +96,7 @@ custom:
         - aws-sdk
     packagerOptions:
       scripts:
-        - rm -rf `find node_modules -type d -name aws-sdk`
+      #  - rm -rf `find node_modules -type d -name aws-sdk`
 
   prune:
     automatic: true
@@ -246,6 +246,15 @@ resources:
         FieldName: putPolicy
         DataSourceName:
           Fn::GetAtt: [GraphQlDsGraphqlRequestObserver, Name]
+    RemoveComponentMutationResolver:
+      Type: "AWS::AppSync::Resolver"
+      Properties:
+        ApiId:
+          Fn::GetAtt: [GraphQlApi, ApiId]
+        TypeName: Mutation
+        FieldName: RemoveComponent
+        DataSourceName:
+          Fn::GetAtt: [GraphQlDsGraphqlRequestObserver, Name]
     ComponentRollbackQueryRequestObserverResolver:
       Type: "AWS::AppSync::Resolver"
       Properties:
@@ -371,7 +380,7 @@ plugins:
   - serverless-newrelic-lambda-layers
   - serverless-plugin-git-variables
   - serverless-plugin-lambda-dead-letter
-  - serverless-mocha-plugin
+  # - serverless-mocha-plugin
   - serverless-appsync-plugin
   - aws-amplify-serverless-plugin
   - serverless-webpack
