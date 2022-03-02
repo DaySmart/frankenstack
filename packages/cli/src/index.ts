@@ -11,6 +11,7 @@ const pEvent = require('p-event');
 const { zip } = require('zip-a-folder');
 const flatten = require('flat');
 import { defaultProvider } from '@aws-sdk/credential-provider-node';
+import { env } from 'process';
 
 
 interface CustomNodeJsGlobal extends NodeJS.Global {
@@ -59,10 +60,10 @@ export default class Deployer {
             await this.deploy(this.config._[3]);
         } else if (this.command === 'rollback') { 
             await this.rollback(this.config._[3], this.config._[4]);
-        } else if(this.command === 'destroy') {
-            await this.destroy();
         } else if(this.command === 'iam') {
             await this.putIAM(this.config._[3]);
+        } else if(this.command === 'remove'){
+            await this.remove(this.config._[3], this.config._[4]);  
         } else {
             console.error(`The command ${this.command} is not implemented`);
         }
@@ -163,11 +164,29 @@ export default class Deployer {
         }
     }
 
-    async destroy() {}
+    async remove(environment: string, componenentName: string) {
+        const creds = await defaultProvider({})();
+        AWS.config.credentials = creds;
+        const awsconfig = await ssmConfig(creds, this.config.stageOveride);
+        const client = new EnvironmentServiceAppSyncClient(
+            awsconfig,
+            creds //await (new CredentialProviderChain()).resolvePromise()
+        )
+        console.log(`Removing component ${environment}:${componenentName}`);
+        await client.removeComponent({
+            deploymentGuid: this.deploymentGuid,
+            env: environment,
+            componentName: componenentName
+        })
+        this.subscribeToDeploymentUpdates(client);
+    }
 
     async deployTemplate(client: EnvironmentServiceAppSyncClient, template: Template) {
         await client.sendDeploymentForm(this.deploymentGuid, template);
+        this.subscribeToDeploymentUpdates(client);
+    }
 
+    subscribeToDeploymentUpdates(client: EnvironmentServiceAppSyncClient){
         const observable = client.subscribeToDeploymentUpdate(this.deploymentGuid);
 
         const realtimeResults = (data: any) => {
@@ -178,11 +197,9 @@ export default class Deployer {
                 try {
                     subscription.unsubscribe();
                     process.exit(exitCode);
-                } catch(err) {}
-                
+                } catch(err) {}  
             }
         }
-        
         const subscription = observable.subscribe({
             next: data => {
                 realtimeResults(data);
