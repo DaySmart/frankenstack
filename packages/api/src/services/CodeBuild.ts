@@ -58,7 +58,7 @@ export module CodeBuildClient {
     }
 
     function generateBuildSpec(buildDir?: string): string {
-        const deployerBranchName = 'env-remove';
+        const deployerBranchName = 'env-service-refactor';
         const buildSpecObj = {
             version: '0.2',
             proxy: {

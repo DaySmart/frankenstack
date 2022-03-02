@@ -141,6 +141,16 @@ export type PutPolicyMutation = {
   putPolicy: boolean,
 };
 
+export type RemoveComponentMutationVariables = {
+  deploymentGuid: string,
+  env: string,
+  componentName: string,
+};
+
+export type RemoveComponentMutation = {
+  RemoveComponent: boolean | null,
+};
+
 export type SubscribeToDeploymentUpdateSubscriptionVariables = {
   deploymentGuid: string,
 };
