@@ -102,7 +102,7 @@ custom:
         - aws-sdk
     packagerOptions:
       scripts:
-        - rm -rf `find node_modules -type d -name aws-sdk`
+      #  - rm -rf `find node_modules -type d -name aws-sdk`
 
   prune:
     automatic: true
@@ -250,6 +250,15 @@ resources:
           Fn::GetAtt: [GraphQlApi, ApiId]
         TypeName: Mutation
         FieldName: putPolicy
+        DataSourceName:
+          Fn::GetAtt: [GraphQlDsGraphqlRequestObserver, Name]
+    RemoveComponentMutationResolver:
+      Type: "AWS::AppSync::Resolver"
+      Properties:
+        ApiId:
+          Fn::GetAtt: [GraphQlApi, ApiId]
+        TypeName: Mutation
+        FieldName: RemoveComponent
         DataSourceName:
           Fn::GetAtt: [GraphQlDsGraphqlRequestObserver, Name]
     ComponentRollbackQueryRequestObserverResolver:

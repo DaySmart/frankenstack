@@ -1,8 +1,8 @@
-import { sendDeploymentForm, deploymentUpdate, putPolicy, putUser } from './src/graphql/mutations';
+import { sendDeploymentForm, deploymentUpdate, putPolicy, putUser, removeComponent } from './src/graphql/mutations';
 import gql from 'graphql-tag';
 import { subscribeToDeploymentUpdate } from './src/graphql/subscriptions';
 import { Observable } from 'apollo-client/util/Observable'
-import { DeploymentUpdateMutationVariables, InputComponent, PutPolicyMutationVariables, PutUserMutationVariables, Template } from './src/graphql/types';
+import { DeploymentUpdateMutationVariables, InputComponent, PutPolicyMutationVariables, PutUserMutationVariables, RemoveComponentMutation, RemoveComponentMutationVariables, Template } from './src/graphql/types';
 import { FetchResult } from 'apollo-link';
 import { getComponentRollbackStateFull } from './src/graphql/customQueries';
 import { getResolvedInputs } from './src/graphql/queries';
@@ -88,6 +88,13 @@ export class EnvironmentServiceAppSyncClient {
         return await this.client.mutate({
             mutation: gql(putUser),
             variables: user
+        });
+    }
+
+    async removeComponent(mutation: RemoveComponentMutationVariables): Promise<FetchResult> {
+        return await this.client.mutate({
+            mutation: gql(removeComponent),
+            variables: mutation
         });
     }
 

@@ -23,6 +23,12 @@ type Mutation {
       policyName: String!
       statements: [Statement]!
     ): Boolean!
+
+     RemoveComponent(
+    deploymentGuid: ID!
+    env: String!
+    componentName: String!
+  ): Boolean
 }
 
 type Subscription {

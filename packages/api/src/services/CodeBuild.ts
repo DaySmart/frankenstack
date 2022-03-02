@@ -13,6 +13,7 @@ export interface CodeBuildTriggerParams {
     componentInputs?: string;
     buildDir?: string;
     artifactOverideGuid?: string;
+    Method?: string;
 }
 
 export module CodeBuildClient {
@@ -32,7 +33,8 @@ export module CodeBuildClient {
                     {name: 'JOB_RUN_GUID', value: params.jobRunGuid},
                     {name: 'JOB_RUN_FINISHED_TOPIC_ARN', value: process.env.JOB_RUN_FINISH_SNS_TOPIC as string},
                     {name: 'IN_FRANKENSTACK', value: 'true'},
-                    {name: 'STAGE', value: process.env.STAGE as string}
+                    {name: 'STAGE', value: process.env.STAGE as string},
+                    {name: 'PROVIDER_METHOD', value: params.Method || "deploy"}
                 ],
                 logsConfigOverride: {
                     cloudWatchLogs: {

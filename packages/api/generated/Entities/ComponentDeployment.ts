@@ -15,6 +15,7 @@ export namespace ComponentDeployment {
         Inputs?: Array<{Key: string, Value: string}>;
         Outputs?: Array<{Key: string, Value: string}>;
         Error?: string;
+        Method?: string;
     }
 
     export interface Provider {

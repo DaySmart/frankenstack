@@ -7,6 +7,7 @@ import ComponentDeploymentDecider_DeploymentHandler from "./generated/Deciders/C
 import DeploymentDecider_ComponentHandler from "./generated/Deciders/DeploymentDecider_ComponentHandler";
 import DeploymentDecider_DeploymentRequestHandler from "./generated/Deciders/DeploymentDecider_DeploymentRequestHandler";
 import DeploymentDecider_JobRunHandler from "./generated/Deciders/DeploymentDecider_JobRunHandler";
+import DeploymentDecider_RemoveComponentRequestHandler from "./generated/Deciders/DeploymentDecider_RemoveComponentRequestHandler";
 import DeploymentRequestDecider_DeploymentFormHandler from "./generated/Deciders/DeploymentRequestDecider_DeploymentFormHandler";
 import DeploymentUpdateDecider_ComponentHandler from "./generated/Deciders/DeploymentUpdateDecider_ComponentHandler";
 import DeploymentUpdateDecider_DeploymentHandler from "./generated/Deciders/DeploymentUpdateDecider_DeploymentHandler";
@@ -14,6 +15,7 @@ import DeploymentUpdateDecider_JobRunHandler from "./generated/Deciders/Deployme
 import DeploymentUpdateDecider_JobRunUpdateHandler from "./generated/Deciders/DeploymentUpdateDecider_JobRunUpdateHandler";
 import PolicyDecider_PutPolicyMutationHandler from "./generated/Deciders/PolicyDecider_PutPolicyMutationHandler";
 import ProviderDecider_ComponentHandler from "./generated/Deciders/ProviderDecider_ComponentHandler";
+import RemoveComponentRequestDecider_RemoveComponentMutationHandler from "./generated/Deciders/RemoveComponentRequestDecider_RemoveComponentMutationHandler";
 import UserDecider_PutUserMutationHandler from "./generated/Deciders/UserDecider_PutUserMutationHandler";
 import { Component } from "./generated/Entities/Component";
 import { ComponentDeployment } from "./generated/Entities/ComponentDeployment";
@@ -29,6 +31,8 @@ import { Policy } from "./generated/Entities/Policy";
 import { Provider } from "./generated/Entities/Provider";
 import { PutPolicyMutation } from "./generated/Entities/PutPolicyMutation";
 import { PutUserMutation } from "./generated/Entities/PutUserMutation";
+import { RemoveComponentMutation } from "./generated/Entities/RemoveComponentMutation";
+import { RemoveComponentRequest } from "./generated/Entities/RemoveComponentRequest";
 import { ResolvedInputsQuery } from "./generated/Entities/ResolvedInputsQuery";
 import { User } from "./generated/Entities/User";
 import ComponentRollbackQueryHandler from "./generated/Observers/ComponentRollbackQueryHandler";
@@ -37,6 +41,7 @@ import JobRunFinishedHandler from "./generated/Observers/JobRunFinishedHandler";
 import JobRunResponseHandler from "./generated/Observers/JobRunResponseHandler";
 import PutPolicyMutationHandler from "./generated/Observers/PutPolicyMutationHandler";
 import PutUserMutationHandler from "./generated/Observers/PutUserMutationHandler";
+import RemoveComponentMutationHandler from "./generated/Observers/RemoveComponentMutationHandler";
 import ResolvedInputsQueryHandler from "./generated/Observers/ResolvedInputsQueryHandler";
 import { ResolvedInputsQueryResponseHandler } from "./generated/Observers/ResolvedInputsQueryResponseHandler";
 import SendDeploymentFormHandler from "./generated/Observers/SendDeploymentFormHandler";
@@ -293,6 +298,37 @@ export function getTemplate(): Template {
           }
         ]
       },
+      {
+        entity: RemoveComponentRequest.ENTITY_NAME,
+        type: RemoveComponentRequest.TYPE,
+        deciderCellsThatCareAboutMe: [
+          {
+            entity: Deployment.ENTITY_NAME,
+            type: Deployment.TYPE,
+            cell: new LambdaDeciderModuleInstance(
+              RemoveComponentRequest.ENTITY_NAME,
+              RemoveComponentRequest.TYPE,
+              Deployment.ENTITY_NAME,
+              Deployment.TYPE,
+              [
+                {
+                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_DATA_PROPERTY,
+                  filterValues: [Deployment.ENTITY_NAME, Deployment.TYPE, 'LastDeploymentGuid']
+                },
+                {
+                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
+                  filterValues: [
+                    Policy.ENTITY_NAME,
+                    Policy.TYPE,
+                    observation => observation.data.PolicyNames
+                  ]
+                }
+              ],
+              DeploymentDecider_RemoveComponentRequestHandler
+            )
+          }
+        ]
+      }
       // {
       //   entity: JobRun.ENTITY_NAME,
       //   type: JobRun.TYPE
@@ -496,6 +532,41 @@ export function getTemplate(): Template {
                 }
               ],
               DeploymentDecider_JobRunHandler,
+              true
+            )
+          }
+        ]
+      },
+      {
+        entity: RemoveComponentMutation.ENTITY_NAME,
+        type: RemoveComponentMutation.TYPE,
+        observers: [
+          {
+            module: "AppSyncRequestObserverModule",
+            operation: "RemoveComponent",
+            cell: new AppSyncRequestObserverModuleInstance(RemoveComponentMutationHandler)
+          }
+        ],
+        deciderCellsThatCareAboutMe: [
+          {
+            entity: RemoveComponentRequest.ENTITY_NAME,
+            type: RemoveComponentRequest.TYPE,
+            cell: new LambdaDeciderModuleInstance(
+              RemoveComponentMutation.ENTITY_NAME,
+              RemoveComponentMutation.TYPE,
+              RemoveComponentRequest.ENTITY_NAME,
+              RemoveComponentRequest.TYPE,
+              [
+                {
+                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
+                  filterValues: [Component.ENTITY_NAME, Component.TYPE, observation => [`${observation.data.Env}:${observation.data.ComponentName}`]]
+                },
+                {
+                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_DATA_PROPERTY,
+                  filterValues: [User.ENTITY_NAME, User.TYPE, 'User']
+                }
+              ],
+              RemoveComponentRequestDecider_RemoveComponentMutationHandler,
               true
             )
           }
