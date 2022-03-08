@@ -14,8 +14,8 @@ export type ProviderInput = {
 };
 
 export type KeyValueInput = {
-  name?: string | null,
-  value?: string | null,
+  name: string,
+  value: string,
 };
 
 export type Template = {
