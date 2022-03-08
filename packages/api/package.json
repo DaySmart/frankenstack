@@ -11,12 +11,16 @@
     "integ": "tsc && sls invoke test --root dist -s integ -p test/integ",
     "e2e": "bash ./test/e2e.sh $ENV"
   },
+  "keywords": [],
+  "author": "DaySmart Software <support@daysmart.com> (https://daysmart.com)",
+  "bugs": {
+    "url": "https://github.com/DaySmart/frankenstack/issues"
+  },
+  "homepage": "https://github.com/DaySmart/frankenstack",
   "repository": {
     "type": "git",
-    "url": "environment-service"
+    "url": "https://github.com/DaySmart/frankenstack.git"
   },
-  "keywords": [],
-  "author": "DSI",
   "license": "Apache-2.0",
   "dependencies": {
     "@daysmart/frankenstack-appsync-client": "^1.1.0",
@@ -54,7 +58,6 @@
     "serverless-domain-manager": "^3.3.1",
     "serverless-jest-plugin": "^0.3.0",
     "serverless-newrelic-lambda-layers": "^0.2.5",
-    "serverless-plugin-aws-alerts": "^1.4.0",
     "serverless-plugin-git-variables": "^4.0.0",
     "serverless-plugin-lambda-dead-letter": "^1.2.1",
     "serverless-prune-plugin": "^1.4.2",

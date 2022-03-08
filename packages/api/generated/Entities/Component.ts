@@ -7,7 +7,7 @@ export namespace Component {
     export const TYPE = "full";
     export const DATAREF = "datarefurl";
 
-    type DeploymentResult = "DEPLOYED" | "DEPLOYMENT_FAILED"
+    type DeploymentResult = "DEPLOYED" | "DEPLOYMENT_FAILED" | "DELETED"
 
     export interface DataSchema {
         DeploymentGuid: string;

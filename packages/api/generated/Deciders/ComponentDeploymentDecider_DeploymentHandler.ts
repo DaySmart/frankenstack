@@ -66,7 +66,8 @@ export default function ComponentDeploymentDecider_DeploymentHandler(
         Provider: component.Provider,
         Inputs: component.Inputs,
         Outputs: component.Outputs,
-        Error: errorMessage
+        Error: errorMessage,
+        Method: data.Method
       }
 
       if(dependentComponentDeploymentObservations) {

@@ -1,27 +1,26 @@
 import { IEntityObservation } from './IEntityObservation';
 
-export namespace JobRunFinished {
-    export const ENTITY_NAME = "daysmart.environmentservice.api.jobrunfinished";
+export namespace RemoveComponentRequest {
+    export const ENTITY_NAME = "daysmart.environmentservice.api.removecomponentrequest";
 
     export const SCHEMA = "schemaurl";
     export const TYPE = "full";
     export const DATAREF = "datarefurl";
 
-    type DeploymentResult = "Success" | "Failed" | "Deleted";
 
     export interface DataSchema {
-        JobRunGuid: string;
-        DeploymentGuid: string;
         Env: string;
-        Name: string;
-        Outputs?: Array<{Key: string, Value: string}>;
-        Status: DeploymentResult;
+        DeploymentGuid: string;
+        User: string;
+        PolicyNames: Array<string>
+        ComponentName: string;
+        LastDeploymentGuid: string;
     }
 
     export class EntityObservation implements IEntityObservation {
         constructor(data: DataSchema) {
             this.data = data;
-            this.entityid = this.data.JobRunGuid;
+            this.entityid = this.data.DeploymentGuid;
         }
 
         entity = ENTITY_NAME;

@@ -1,16 +1,15 @@
 #!/usr/bin/env node
 import AWS from 'aws-sdk';
-const fs = require('fs');
 import { EnvironmentServiceAppSyncClient } from '@daysmart/frankenstack-appsync-client'
 const ssmConfig = require('./utils/ssmConfig');
 const uuid = require('uuid');
-const path = require('path');
 const parseYaml = require('./utils/parseYaml');
-const s3 = require('s3-node-client');
-const pEvent = require('p-event');
-const { zip } = require('zip-a-folder');
 const flatten = require('flat');
+const archiver = require('archiver');
+const stream = require('stream');
 import { defaultProvider } from '@aws-sdk/credential-provider-node';
+import { S3Client } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
 
 
 interface CustomNodeJsGlobal extends NodeJS.Global {
@@ -59,10 +58,10 @@ export default class Deployer {
             await this.deploy(this.config._[3]);
         } else if (this.command === 'rollback') { 
             await this.rollback(this.config._[3], this.config._[4]);
-        } else if(this.command === 'destroy') {
-            await this.destroy();
         } else if(this.command === 'iam') {
             await this.putIAM(this.config._[3]);
+        } else if(this.command === 'remove'){
+            await this.remove(this.config._[3], this.config._[4]);  
         } else {
             console.error(`The command ${this.command} is not implemented`);
         }
@@ -70,40 +69,51 @@ export default class Deployer {
 
     async deploy(file: string) {
         const template: Template = this.parseComponentTemplate(file);
-        console.log('template', JSON.stringify(template, null, 2));
         console.log('Created deployment', this.deploymentGuid);
-        const repoName = process.cwd();
         const creds = await defaultProvider({})();
         AWS.config.credentials = creds;
         const awsconfig = await ssmConfig(creds, this.config.stageOveride);
-        console.log("Zipping package...")
-        if(fs.existsSync('.deployer')) {
-            fs.rmdirSync('.deployer', {recursive: true});
-            
-        }
-        fs.mkdirSync('.deployer');
+        console.log("Packaging project...")
 
-        await zip(repoName, `.deployer/${this.deploymentGuid}.zip`);
-        console.log("Package zipped!");
+        const output = new stream.PassThrough();
+        const archive = archiver('zip');
+        
+        output.on('error', function(err: any) {
+            console.error(err);
+            throw err;
+        });
 
-        const awsS3Client = new AWS.S3({region: 'us-east-1', credentials: creds});
-        const s3Client = s3.createClient({s3Client: awsS3Client});
-        const params = {
-            s3Params: {
+        output.on('end', function() {
+            console.log('Package prepared. Uploading to S3...');
+        });
+        
+        archive.on('error', function(err: any) {
+            console.error(err);
+            throw err;
+        });
+        
+        archive.pipe(output);
+        archive.glob('**', {ignore: 'node_modules/**', dot: true});
+        archive.finalize();
+
+        const upload = new Upload({
+            client: new S3Client({
+                region: awsconfig.aws_user_files_s3_bucket_region || 'us-east-1',
+                credentials: creds
+            }),
+            params: {
                 Bucket: awsconfig.aws_user_files_s3_bucket,
                 Key: this.deploymentGuid + `.zip`,
-            },
-            localFile: repoName + `/.deployer/${this.deploymentGuid}.zip`,
-        };
-
-        console.log("Uploading package to S3...");
-        const uploader = s3Client.uploadFile(params);
-        await pEvent(uploader, 'end');
-        console.log('Package upload complete!');
+                Body: output,
+                ContentType: 'application/zip'
+            }
+        });
+        await upload.done();
+        console.log("Packaging complete!");
         
         const client = new EnvironmentServiceAppSyncClient(
             awsconfig,
-            creds //await (new CredentialProviderChain()).resolvePromise()
+            creds
         )
 
         await this.deployTemplate(client, template);
@@ -164,11 +174,29 @@ export default class Deployer {
         }
     }
 
-    async destroy() {}
+    async remove(environment: string, componenentName: string) {
+        const creds = await defaultProvider({})();
+        AWS.config.credentials = creds;
+        const awsconfig = await ssmConfig(creds, this.config.stageOveride);
+        const client = new EnvironmentServiceAppSyncClient(
+            awsconfig,
+            creds //await (new CredentialProviderChain()).resolvePromise()
+        )
+        console.log(`Removing component ${environment}:${componenentName}`);
+        await client.removeComponent({
+            deploymentGuid: this.deploymentGuid,
+            env: environment,
+            componentName: componenentName
+        })
+        this.subscribeToDeploymentUpdates(client);
+    }
 
     async deployTemplate(client: EnvironmentServiceAppSyncClient, template: Template) {
         await client.sendDeploymentForm(this.deploymentGuid, template);
+        this.subscribeToDeploymentUpdates(client);
+    }
 
+    subscribeToDeploymentUpdates(client: EnvironmentServiceAppSyncClient){
         const observable = client.subscribeToDeploymentUpdate(this.deploymentGuid);
 
         const realtimeResults = (data: any) => {
@@ -179,11 +207,9 @@ export default class Deployer {
                 try {
                     subscription.unsubscribe();
                     process.exit(exitCode);
-                } catch(err) {}
-                
+                } catch(err) {}  
             }
         }
-        
         const subscription = observable.subscribe({
             next: data => {
                 realtimeResults(data);

@@ -81,7 +81,7 @@ class ServerlessFrankenstackPlugin {
             Name: `prod-frankenstack-amplify-config`,
             WithDecryption: true
         }).promise();
-        if(param.Parameter?.Value) {
+        if(param.Parameter && param.Parameter.Value) {
             return JSON.parse(param.Parameter.Value);
         } else {
             throw `No configuration exists from ${paramStage}`;

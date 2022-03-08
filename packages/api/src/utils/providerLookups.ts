@@ -1,7 +1,8 @@
-import { Observation2 } from "../../../../../o18k-ts-aws/dist";
+
 import { Component } from "../../generated/Entities/Component";
 import { Deployment } from "../../generated/Entities/Deployment";
 import { ComponentDeployment } from '../../generated/Entities/ComponentDeployment';
+import { Observation2 } from "o18k-ts-aws";
 
 const LOOKUP_PATTERN = new RegExp(/\$\{(.*?)\}/);
 

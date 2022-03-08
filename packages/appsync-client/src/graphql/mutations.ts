@@ -38,3 +38,15 @@ export const putPolicy = `mutation PutPolicy($policyName: String!, $statements: 
   putPolicy(policyName: $policyName, statements: $statements)
 }
 `;
+export const removeComponent = `mutation RemoveComponent(
+  $deploymentGuid: ID!
+  $env: String!
+  $componentName: String!
+) {
+  RemoveComponent(
+    deploymentGuid: $deploymentGuid
+    env: $env
+    componentName: $componentName
+  )
+}
+`;

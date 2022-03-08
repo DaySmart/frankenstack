@@ -1,4 +1,4 @@
-import { Observation2 } from "../../../../../o18k-ts-aws/dist";
+import { Observation2 } from "o18k-ts-aws";
 import { Policy } from "../../generated/Entities/Policy";
 const micromatch = require('micromatch');
 
