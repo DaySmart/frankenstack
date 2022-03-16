@@ -454,6 +454,7 @@ export function getTemplate(): Template {
         observers: [
           {
             cell: new EventBridgeObserverModuleInstance(ProviderFailureHandler),
+            eventSourceMatch: "aws.codebuild",
           },
         ],
       },

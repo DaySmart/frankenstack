@@ -78,7 +78,6 @@ export module CodeBuildClient {
                 },
                 'pre_build': {
                     commands: [
-                        'exit 1',
                         `npm install -g git+https://github.com/DaySmart/deployer.git#${deployerBranchName}`
                     ]
                 },
