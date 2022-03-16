@@ -27,7 +27,7 @@ provider:
     JOB_RUN_FINISH_SNS_TOPIC: arn:aws:sns:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:${self:service.name}-${opt:stage}-job-run-finished
     CODE_BUILD_LOG_GROUP: { "Ref": "CodeBuildCloudwatchLogGroup" }
     NEW_RELIC_ACCOUNT_ID: ${self:custom.config.NEW_RELIC_ACCOUNT_ID}
-    NEW_RELIC_LICENSE_KEY: ${self:custom.config.NRAK-UU9CC7234ZUOICV5U17PN155T3Q}
+    NEW_RELIC_LICENSE_KEY: ${self:custom.config.NEW_RELIC_API_KEY}
     NEW_RELIC_LAMBDA_EXTENSION_ENABLED: true
     NEW_RELIC_EXTENSION_SEND_FUNCTION_LOGS: true
     NEW_RELIC_EXTENSION_LOG_LEVEL: DEBUG
