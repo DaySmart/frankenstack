@@ -1,4 +1,8 @@
-import { APPSYNC_REQUEST_RESPONSE_ACTOR_MODULE, filters, Template } from "o18k-ts-aws";
+import {
+  APPSYNC_REQUEST_RESPONSE_ACTOR_MODULE,
+  filters,
+  Template,
+} from "o18k-ts-aws";
 import createGenericCloudWatchLogObserverHandle from "o18k-ts-aws/dist/modules/cloudwatchLogObserver/createGenericCloudWatchLogObserverHandle";
 import GraphqlActor from "./generated/Actors/GraphqlActor";
 import JobRunActor from "./generated/Actors/JobRunActor";
@@ -13,6 +17,7 @@ import DeploymentUpdateDecider_ComponentHandler from "./generated/Deciders/Deplo
 import DeploymentUpdateDecider_DeploymentHandler from "./generated/Deciders/DeploymentUpdateDecider_DeploymentHandler";
 import DeploymentUpdateDecider_JobRunHandler from "./generated/Deciders/DeploymentUpdateDecider_JobRunHandler";
 import DeploymentUpdateDecider_JobRunUpdateHandler from "./generated/Deciders/DeploymentUpdateDecider_JobRunUpdateHandler";
+import JobRunFinishedDecider_ProviderFailureHandler from "./generated/Deciders/JobRunFinishedDecider_ProviderFailureHandler";
 import PolicyDecider_PutPolicyMutationHandler from "./generated/Deciders/PolicyDecider_PutPolicyMutationHandler";
 import ProviderDecider_ComponentHandler from "./generated/Deciders/ProviderDecider_ComponentHandler";
 import RemoveComponentRequestDecider_RemoveComponentMutationHandler from "./generated/Deciders/RemoveComponentRequestDecider_RemoveComponentMutationHandler";
@@ -29,6 +34,7 @@ import { JobRunFinished } from "./generated/Entities/JobRunFinished";
 import { JobRunUpdate } from "./generated/Entities/JobRunUpdate";
 import { Policy } from "./generated/Entities/Policy";
 import { Provider } from "./generated/Entities/Provider";
+import { ProviderFailure } from "./generated/Entities/ProviderFailure";
 import { PutPolicyMutation } from "./generated/Entities/PutPolicyMutation";
 import { PutUserMutation } from "./generated/Entities/PutUserMutation";
 import { RemoveComponentMutation } from "./generated/Entities/RemoveComponentMutation";
@@ -39,6 +45,7 @@ import ComponentRollbackQueryHandler from "./generated/Observers/ComponentRollba
 import { ComponentRollbackQueryResponseHandler } from "./generated/Observers/ComponentRollbackQueryResponseHandler";
 import JobRunFinishedHandler from "./generated/Observers/JobRunFinishedHandler";
 import JobRunResponseHandler from "./generated/Observers/JobRunResponseHandler";
+import ProviderFailureHandler from "./generated/Observers/ProviderFailureHandler";
 import PutPolicyMutationHandler from "./generated/Observers/PutPolicyMutationHandler";
 import PutUserMutationHandler from "./generated/Observers/PutUserMutationHandler";
 import RemoveComponentMutationHandler from "./generated/Observers/RemoveComponentMutationHandler";
@@ -50,6 +57,7 @@ import { AppSyncRequestResponseActorModuleInstance } from "./moduleInstances/App
 import { CloudWatchLogObserverModuleInstance } from "./moduleInstances/CloudWatchLogObserverModuleInstance";
 import { CustomActorModuleInstance } from "./moduleInstances/CustomActorModuleInstance";
 import { CustomResponseObserverModuleInstance } from "./moduleInstances/CustomResponseObserverModuleInstance";
+import { EventBridgeObserverModuleInstance } from "./moduleInstances/EventBridgeObserverModuleIntsance";
 import { LambdaDeciderModuleInstance } from "./moduleInstances/LambdaDeciderModuleInstance";
 import { LoggerModuleInstance } from "./moduleInstances/LoggerModuleInstance";
 import { SnsTopicObserverModuleInstance } from "./moduleInstances/SnsTopicObserverModuleInstance";
@@ -77,37 +85,45 @@ export function getTemplate(): Template {
               Deployment.TYPE,
               [
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_ENTITYID,
-                  filterValues: [Deployment.ENTITY_NAME, Deployment.TYPE]
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_ENTITYID,
+                  filterValues: [Deployment.ENTITY_NAME, Deployment.TYPE],
                 },
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
                   filterValues: [
                     ComponentDeployment.ENTITY_NAME,
                     ComponentDeployment.TYPE,
-                    observation =>
-                      observation.data.Components.map(component => {
+                    (observation) =>
+                      observation.data.Components.map((component) => {
                         return `${observation.data.DeploymentGuid}:${observation.data.Env}:${component.Name}`;
-                      })
-                  ]
+                      }),
+                  ],
                 },
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
-                  filterValues: [Component.ENTITY_NAME, Component.TYPE, observation => getComponentLookup(observation)]
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
+                  filterValues: [
+                    Component.ENTITY_NAME,
+                    Component.TYPE,
+                    (observation) => getComponentLookup(observation),
+                  ],
                 },
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
                   filterValues: [
                     Policy.ENTITY_NAME,
                     Policy.TYPE,
-                    observation => observation.data.PolicyNames
-                  ]
-                }
+                    (observation) => observation.data.PolicyNames,
+                  ],
+                },
               ],
               DeploymentDecider_DeploymentRequestHandler
-            )
-          }
-        ]
+            ),
+          },
+        ],
       },
       {
         entity: Deployment.ENTITY_NAME,
@@ -123,35 +139,42 @@ export function getTemplate(): Template {
               ComponentDeployment.TYPE,
               [
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
                   filterValues: [
                     ComponentDeployment.ENTITY_NAME,
                     ComponentDeployment.TYPE,
-                    observation =>
-                      observation.data.Components.map(component => {
+                    (observation) =>
+                      observation.data.Components.map((component) => {
                         return `${observation.data.DeploymentGuid}:${observation.data.Env}:${component.Name}`;
-                      })
-                  ]
+                      }),
+                  ],
                 },
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
                   filterValues: [
                     Provider.ENTITY_NAME,
                     Provider.TYPE,
-                    observation => observation.data.Components.map(component => component.Provider.Name)
-                  ]
+                    (observation) =>
+                      observation.data.Components.map(
+                        (component) => component.Provider.Name
+                      ),
+                  ],
                 },
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
                   filterValues: [
                     Component.ENTITY_NAME,
                     Component.TYPE,
-                    observation => getProviderAccountComponentLookups(observation)
-                  ]
-                }
+                    (observation) =>
+                      getProviderAccountComponentLookups(observation),
+                  ],
+                },
               ],
               ComponentDeploymentDecider_DeploymentHandler
-            )
+            ),
           },
           {
             entity: DeploymentUpdate.ENTITY_NAME,
@@ -163,33 +186,35 @@ export function getTemplate(): Template {
               DeploymentUpdate.TYPE,
               [
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
                   filterValues: [
                     Component.ENTITY_NAME,
                     Component.TYPE,
-                    observation =>
-                      observation.data.Components.map(component => {
+                    (observation) =>
+                      observation.data.Components.map((component) => {
                         return `${observation.data.Env}:${component.Name}`;
-                      })
-                  ]
+                      }),
+                  ],
                 },
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
                   filterValues: [
                     ComponentDeployment.ENTITY_NAME,
                     ComponentDeployment.TYPE,
-                    observation =>
-                      observation.data.Components.map(component => {
+                    (observation) =>
+                      observation.data.Components.map((component) => {
                         return `${observation.data.DeploymentGuid}:${observation.data.Env}:${component.Name}`;
-                      })
-                  ]
-                }
+                      }),
+                  ],
+                },
               ],
               DeploymentUpdateDecider_DeploymentHandler,
               false
-            )
-          }
-        ]
+            ),
+          },
+        ],
       },
       {
         entity: ComponentDeployment.ENTITY_NAME,
@@ -198,9 +223,9 @@ export function getTemplate(): Template {
           {
             module: "CustomActorModule",
             name: "JobRunAction",
-            cell: new CustomActorModuleInstance("JobRunAction", JobRunActor)
-          }
-        ]
+            cell: new CustomActorModuleInstance("JobRunAction", JobRunActor),
+          },
+        ],
       },
       {
         entity: Component.ENTITY_NAME,
@@ -216,13 +241,17 @@ export function getTemplate(): Template {
               DeploymentUpdate.TYPE,
               [
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_ENTITYID,
-                  filterValues: [DeploymentUpdate.ENTITY_NAME, DeploymentUpdate.TYPE]
-                }
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_ENTITYID,
+                  filterValues: [
+                    DeploymentUpdate.ENTITY_NAME,
+                    DeploymentUpdate.TYPE,
+                  ],
+                },
               ],
               DeploymentUpdateDecider_ComponentHandler,
               false
-            )
+            ),
           },
           {
             entity: Deployment.ENTITY_NAME,
@@ -234,12 +263,17 @@ export function getTemplate(): Template {
               Deployment.TYPE,
               [
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_DATA_PROPERTY,
-                  filterValues: [Deployment.ENTITY_NAME, Deployment.TYPE, "DeploymentGuid"]
-                }
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_DATA_PROPERTY,
+                  filterValues: [
+                    Deployment.ENTITY_NAME,
+                    Deployment.TYPE,
+                    "DeploymentGuid",
+                  ],
+                },
               ],
               DeploymentDecider_ComponentHandler
-            )
+            ),
           },
           {
             entity: Provider.ENTITY_NAME,
@@ -251,18 +285,21 @@ export function getTemplate(): Template {
               Provider.TYPE,
               [
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
                   filterValues: [
                     ComponentDeployment.ENTITY_NAME,
                     ComponentDeployment.TYPE,
-                    observation => [`${observation.data.DeploymentGuid}:${observation.data.Env}:${observation.data.Name}`]
-                  ]
-                }
+                    (observation) => [
+                      `${observation.data.DeploymentGuid}:${observation.data.Env}:${observation.data.Name}`,
+                    ],
+                  ],
+                },
               ],
               ProviderDecider_ComponentHandler
-            )
-          }
-        ]
+            ),
+          },
+        ],
       },
       {
         entity: DeploymentUpdate.ENTITY_NAME,
@@ -271,9 +308,13 @@ export function getTemplate(): Template {
           {
             module: "CustomActorModule",
             name: "GraphQLAction",
-            cell: new CustomActorModuleInstance("GraphQLAction", GraphqlActor, [])
-          }
-        ]
+            cell: new CustomActorModuleInstance(
+              "GraphQLAction",
+              GraphqlActor,
+              []
+            ),
+          },
+        ],
       },
       {
         entity: JobRunFinished.ENTITY_NAME,
@@ -289,14 +330,49 @@ export function getTemplate(): Template {
               Component.TYPE,
               [
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
-                  filterValues: [Component.ENTITY_NAME, Component.TYPE, observation => [`${observation.data.Env}:${observation.data.Name}`]]
-                }
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
+                  filterValues: [
+                    Component.ENTITY_NAME,
+                    Component.TYPE,
+                    (observation) => [
+                      `${observation.data.Env}:${observation.data.Name}`,
+                    ],
+                  ],
+                },
               ],
               ComponentDecider_JobRunFinishedHandler
-            )
-          }
-        ]
+            ),
+          },
+        ],
+      },
+      {
+        entity: ProviderFailure.ENTITY_NAME,
+        type: ProviderFailure.TYPE,
+        deciderCellsThatCareAboutMe: [
+          {
+            entity: JobRunFinished.ENTITY_NAME,
+            type: JobRunFinished.TYPE,
+            cell: new LambdaDeciderModuleInstance(
+              ProviderFailure.ENTITY_NAME,
+              ProviderFailure.TYPE,
+              JobRunFinished.ENTITY_NAME,
+              JobRunFinished.TYPE,
+              [
+                {
+                  filter:
+                    filters.TOP_10_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_GSI2_IN_LIST_FROM_FUNCTION,
+                  filterValues: [
+                    JobRun.ENTITY_NAME,
+                    JobRun.TYPE,
+                    (observation) => [observation.data.AWSResourceArn],
+                  ],
+                },
+              ],
+              JobRunFinishedDecider_ProviderFailureHandler
+            ),
+          },
+        ],
       },
       {
         entity: RemoveComponentRequest.ENTITY_NAME,
@@ -312,23 +388,29 @@ export function getTemplate(): Template {
               Deployment.TYPE,
               [
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_DATA_PROPERTY,
-                  filterValues: [Deployment.ENTITY_NAME, Deployment.TYPE, 'LastDeploymentGuid']
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_DATA_PROPERTY,
+                  filterValues: [
+                    Deployment.ENTITY_NAME,
+                    Deployment.TYPE,
+                    "LastDeploymentGuid",
+                  ],
                 },
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
                   filterValues: [
                     Policy.ENTITY_NAME,
                     Policy.TYPE,
-                    observation => observation.data.PolicyNames
-                  ]
-                }
+                    (observation) => observation.data.PolicyNames,
+                  ],
+                },
               ],
               DeploymentDecider_RemoveComponentRequestHandler
-            )
-          }
-        ]
-      }
+            ),
+          },
+        ],
+      },
       // {
       //   entity: JobRun.ENTITY_NAME,
       //   type: JobRun.TYPE
@@ -341,8 +423,8 @@ export function getTemplate(): Template {
         observers: [
           {
             cell: new SnsTopicObserverModuleInstance(JobRunFinishedHandler),
-            topicArnMatch: "job-run-finished"
-          }
+            topicArnMatch: "job-run-finished",
+          },
         ],
         deciderCellsThatCareAboutMe: [
           {
@@ -355,24 +437,40 @@ export function getTemplate(): Template {
               DeploymentUpdate.TYPE,
               [
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_ENTITYID,
-                  filterValues: [JobRun.ENTITY_NAME, JobRun.TYPE]
-                }
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_ENTITYID,
+                  filterValues: [JobRun.ENTITY_NAME, JobRun.TYPE],
+                },
               ],
               DeploymentUpdateDecider_JobRunUpdateHandler,
               false
-            )
-          }
-        ]
+            ),
+          },
+        ],
+      },
+      {
+        entity: ProviderFailure.ENTITY_NAME,
+        type: ProviderFailure.TYPE,
+        observers: [
+          {
+            cell: new EventBridgeObserverModuleInstance(ProviderFailureHandler),
+            eventSourceMatch: "aws.codebuild",
+          },
+        ],
       },
       {
         entity: JobRunUpdate.ENTITY_NAME,
         type: JobRunUpdate.TYPE,
         observers: [
           {
-            cell: new CloudWatchLogObserverModuleInstance(createGenericCloudWatchLogObserverHandle(JobRunUpdate.EntityObservation), false),
-            logGroupMatch: "frankenstack-deployments"
-          }
+            cell: new CloudWatchLogObserverModuleInstance(
+              createGenericCloudWatchLogObserverHandle(
+                JobRunUpdate.EntityObservation
+              ),
+              false
+            ),
+            logGroupMatch: "frankenstack-deployments",
+          },
         ],
         deciderCellsThatCareAboutMe: [
           {
@@ -385,15 +483,16 @@ export function getTemplate(): Template {
               DeploymentUpdate.TYPE,
               [
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_ENTITYID,
-                  filterValues: [JobRun.ENTITY_NAME, JobRun.TYPE]
-                }
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_ENTITYID,
+                  filterValues: [JobRun.ENTITY_NAME, JobRun.TYPE],
+                },
               ],
               DeploymentUpdateDecider_JobRunUpdateHandler,
               false
-            )
-          }
-        ]
+            ),
+          },
+        ],
       },
       {
         entity: DeploymentForm.ENTITY_NAME,
@@ -402,8 +501,10 @@ export function getTemplate(): Template {
           //TODO:
           {
             operation: "sendDeploymentForm",
-            cell: new AppSyncRequestObserverModuleInstance(SendDeploymentFormHandler)
-          }
+            cell: new AppSyncRequestObserverModuleInstance(
+              SendDeploymentFormHandler
+            ),
+          },
         ],
         deciderCellsThatCareAboutMe: [
           {
@@ -416,18 +517,23 @@ export function getTemplate(): Template {
               DeploymentRequest.TYPE,
               [
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_ENTITYID,
-                  filterValues: [DeploymentRequest.ENTITY_NAME, DeploymentRequest.TYPE]
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_ENTITYID,
+                  filterValues: [
+                    DeploymentRequest.ENTITY_NAME,
+                    DeploymentRequest.TYPE,
+                  ],
                 },
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_DATA_PROPERTY,
-                  filterValues: [User.ENTITY_NAME, User.TYPE, "User"]
-                }
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_DATA_PROPERTY,
+                  filterValues: [User.ENTITY_NAME, User.TYPE, "User"],
+                },
               ],
               DeploymentRequestDecider_DeploymentFormHandler
-            )
-          }
-        ]
+            ),
+          },
+        ],
       },
       {
         entity: PutUserMutation.ENTITY_NAME,
@@ -436,8 +542,10 @@ export function getTemplate(): Template {
           //TODO:
           {
             operation: "putUser",
-            cell: new AppSyncRequestObserverModuleInstance(PutUserMutationHandler)
-          }
+            cell: new AppSyncRequestObserverModuleInstance(
+              PutUserMutationHandler
+            ),
+          },
         ],
         deciderCellsThatCareAboutMe: [
           {
@@ -450,14 +558,19 @@ export function getTemplate(): Template {
               User.TYPE,
               [
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_DATA_PROPERTY,
-                  filterValues: [Deployment.ENTITY_NAME, Deployment.TYPE, "UserId"]
-                }
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_DATA_PROPERTY,
+                  filterValues: [
+                    Deployment.ENTITY_NAME,
+                    Deployment.TYPE,
+                    "UserId",
+                  ],
+                },
               ],
               UserDecider_PutUserMutationHandler
-            )
-          }
-        ]
+            ),
+          },
+        ],
       },
       {
         entity: PutPolicyMutation.ENTITY_NAME,
@@ -466,8 +579,10 @@ export function getTemplate(): Template {
           //TODO:
           {
             operation: "putPolicy",
-            cell: new AppSyncRequestObserverModuleInstance(PutPolicyMutationHandler)
-          }
+            cell: new AppSyncRequestObserverModuleInstance(
+              PutPolicyMutationHandler
+            ),
+          },
         ],
         deciderCellsThatCareAboutMe: [
           {
@@ -480,14 +595,19 @@ export function getTemplate(): Template {
               Policy.TYPE,
               [
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_DATA_PROPERTY,
-                  filterValues: [Deployment.ENTITY_NAME, Deployment.TYPE, "PolicyName"]
-                }
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_DATA_PROPERTY,
+                  filterValues: [
+                    Deployment.ENTITY_NAME,
+                    Deployment.TYPE,
+                    "PolicyName",
+                  ],
+                },
               ],
               PolicyDecider_PutPolicyMutationHandler
-            )
-          }
-        ]
+            ),
+          },
+        ],
       },
       {
         entity: JobRun.ENTITY_NAME,
@@ -495,8 +615,10 @@ export function getTemplate(): Template {
         observers: [
           {
             actionName: "JobRunAction",
-            cell: new CustomResponseObserverModuleInstance(JobRunResponseHandler)
-          }
+            cell: new CustomResponseObserverModuleInstance(
+              JobRunResponseHandler
+            ),
+          },
         ],
         deciderCellsThatCareAboutMe: [
           {
@@ -509,13 +631,17 @@ export function getTemplate(): Template {
               DeploymentUpdate.TYPE,
               [
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_ENTITYID,
-                  filterValues: [DeploymentUpdate.ENTITY_NAME, DeploymentUpdate.TYPE]
-                }
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_ENTITYID,
+                  filterValues: [
+                    DeploymentUpdate.ENTITY_NAME,
+                    DeploymentUpdate.TYPE,
+                  ],
+                },
               ],
               DeploymentUpdateDecider_JobRunHandler,
               false
-            )
+            ),
           },
           {
             entity: Deployment.ENTITY_NAME,
@@ -527,15 +653,20 @@ export function getTemplate(): Template {
               Deployment.TYPE,
               [
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_DATA_PROPERTY,
-                  filterValues: [Deployment.ENTITY_NAME, Deployment.TYPE, "DeploymentGuid"]
-                }
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_DATA_PROPERTY,
+                  filterValues: [
+                    Deployment.ENTITY_NAME,
+                    Deployment.TYPE,
+                    "DeploymentGuid",
+                  ],
+                },
               ],
               DeploymentDecider_JobRunHandler,
               true
-            )
-          }
-        ]
+            ),
+          },
+        ],
       },
       {
         entity: RemoveComponentMutation.ENTITY_NAME,
@@ -544,8 +675,10 @@ export function getTemplate(): Template {
           {
             module: "AppSyncRequestObserverModule",
             operation: "RemoveComponent",
-            cell: new AppSyncRequestObserverModuleInstance(RemoveComponentMutationHandler)
-          }
+            cell: new AppSyncRequestObserverModuleInstance(
+              RemoveComponentMutationHandler
+            ),
+          },
         ],
         deciderCellsThatCareAboutMe: [
           {
@@ -558,19 +691,27 @@ export function getTemplate(): Template {
               RemoveComponentRequest.TYPE,
               [
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
-                  filterValues: [Component.ENTITY_NAME, Component.TYPE, observation => [`${observation.data.Env}:${observation.data.ComponentName}`]]
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
+                  filterValues: [
+                    Component.ENTITY_NAME,
+                    Component.TYPE,
+                    (observation) => [
+                      `${observation.data.Env}:${observation.data.ComponentName}`,
+                    ],
+                  ],
                 },
                 {
-                  filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_DATA_PROPERTY,
-                  filterValues: [User.ENTITY_NAME, User.TYPE, 'User']
-                }
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_DATA_PROPERTY,
+                  filterValues: [User.ENTITY_NAME, User.TYPE, "User"],
+                },
               ],
               RemoveComponentRequestDecider_RemoveComponentMutationHandler,
               true
-            )
-          }
-        ]
+            ),
+          },
+        ],
       },
       {
         entity: ComponentRollbackQuery.ENTITY_NAME,
@@ -579,29 +720,39 @@ export function getTemplate(): Template {
           {
             module: "AppSyncRequestObserverModule",
             operation: "getComponentRollbackState",
-            cell: new AppSyncRequestObserverModuleInstance(ComponentRollbackQueryHandler)
-          }
+            cell: new AppSyncRequestObserverModuleInstance(
+              ComponentRollbackQueryHandler
+            ),
+          },
         ],
         actorCellsThatCareAboutMe: [
           {
             name: "ComponentRollbackQueryResponseActor",
             module: APPSYNC_REQUEST_RESPONSE_ACTOR_MODULE,
-            cell: new AppSyncRequestResponseActorModuleInstance("ComponentRollbackQueryResponseActor", ComponentRollbackQueryResponseHandler, [
-              {
-                filter: filters.TOP_2_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_ENTITYID,
-                filterValues: [Component.ENTITY_NAME, Component.TYPE]
-              },
-              {
-                filter: filters.TOP_10_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_GSI2_IN_LIST_FROM_FUNCTION,
-                filterValues: [
-                  ComponentDeployment.ENTITY_NAME,
-                  ComponentDeployment.TYPE,
-                  observation => [`${observation.data.Env}:${observation.data.ComponentName}`]
-                ]
-              }
-            ])
-          }
-        ]
+            cell: new AppSyncRequestResponseActorModuleInstance(
+              "ComponentRollbackQueryResponseActor",
+              ComponentRollbackQueryResponseHandler,
+              [
+                {
+                  filter:
+                    filters.TOP_2_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_ENTITYID,
+                  filterValues: [Component.ENTITY_NAME, Component.TYPE],
+                },
+                {
+                  filter:
+                    filters.TOP_10_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_GSI2_IN_LIST_FROM_FUNCTION,
+                  filterValues: [
+                    ComponentDeployment.ENTITY_NAME,
+                    ComponentDeployment.TYPE,
+                    (observation) => [
+                      `${observation.data.Env}:${observation.data.ComponentName}`,
+                    ],
+                  ],
+                },
+              ]
+            ),
+          },
+        ],
       },
       {
         entity: ResolvedInputsQuery.ENTITY_NAME,
@@ -610,23 +761,34 @@ export function getTemplate(): Template {
           {
             module: "AppSyncRequestObserverModule",
             operation: "getResolvedInputs",
-            cell: new AppSyncRequestObserverModuleInstance(ResolvedInputsQueryHandler)
-          }
+            cell: new AppSyncRequestObserverModuleInstance(
+              ResolvedInputsQueryHandler
+            ),
+          },
         ],
         actorCellsThatCareAboutMe: [
           {
             name: "ResolvedInputsQueryResponseActor",
             module: APPSYNC_REQUEST_RESPONSE_ACTOR_MODULE,
-            cell: new AppSyncRequestResponseActorModuleInstance("ResolvedInputsQueryResponseActor", ResolvedInputsQueryResponseHandler, [
-              {
-                filter: filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
-                filterValues: [Component.ENTITY_NAME, Component.TYPE, observation => getComponentLookup(observation)]
-              }
-            ])
-          }
-        ]
-      }
-    ]
+            cell: new AppSyncRequestResponseActorModuleInstance(
+              "ResolvedInputsQueryResponseActor",
+              ResolvedInputsQueryResponseHandler,
+              [
+                {
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
+                  filterValues: [
+                    Component.ENTITY_NAME,
+                    Component.TYPE,
+                    (observation) => getComponentLookup(observation),
+                  ],
+                },
+              ]
+            ),
+          },
+        ],
+      },
+    ],
   };
   return template;
 }

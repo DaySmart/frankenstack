@@ -20,8 +20,8 @@ export default function JobRunResponseHandler(
       CloudWatchLogGroup: process.env.JOB_RUN_CLOUDWATCH_LOG_GROUP as string,
       CloudWatchLogStream: response.jobRunGuid,
       AWSResourceArn: response.awsResourceArn,
-      Error: response.error
-      
+      Error: response.error,
+      Env: response.env
     },
     observation.traceid
   );
