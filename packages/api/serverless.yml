@@ -20,6 +20,7 @@ provider:
     HTTP_ACTION_FUNCTION_NAME: ${self:service.name}-${opt:stage}-httpAction
     HTTP_ACTION_FUNCTION_ARN: arn:aws:lambda:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:function:${self:service.name}-${opt:stage}-httpAction
     DECIDER_LAMBDA_FUNCTION_NAME: ${self:service.name}-${opt:stage}-lambdaDecider
+    SINGLETON_DECIDER_LAMBDA_FUNCTION_NAME: ${self:service.name}-${opt:stage}-singletonLambdaDecider
     CUSTOM_ACTOR_FUNCTION_NAME: ${self:service.name}-${opt:stage}-customActor
     DEBUG: ${self:custom.isProd.${opt:stage}, self:custom.isProd.other}
     S3_BUCKET: { "Ref": "DeploymentPackageBucket" }
@@ -154,6 +155,11 @@ functions:
     handler: plugin/lambdaDecider/lambdaDecider.lambdaDeciderWrapper
     deadLetter:
       sqs: ${self:service.name}-${opt:stage}-lambdaDecider-dl-queue
+  singletonLambdaDecider:
+    handler: plugin/lambdaDecider/lambdaDecider.lambdaDeciderWrapper
+    reservedConcurrency: 1
+    deadLetter:
+      sqs: ${self:service.name}-${opt:stage}-singletonLambdaDecider-dl-queue
   graphqlRequestObserver:
     handler: plugin/appSyncRequestObserver/appSyncRequestObserver.appSyncRequestObserverWrapper
     deadLetter:
