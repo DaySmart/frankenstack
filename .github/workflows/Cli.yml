@@ -11,6 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
+      - run: echo "Publishing to NPM"
       - name: Run build
         run: npm build
       - name: NPM publish
