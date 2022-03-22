@@ -9,21 +9,17 @@ jobs:
   Publish-package:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 10
       - id: publish
-      - working-directory: ./packages/api
-      - run: |
-          npm install
-          npm run build
+      - uses: actions/checkout@v2
+      - run: npm install
+        working-directory: ./packages/api
+      - name: npm build
+        run: npm run build
       - name: npm publish
         uses: JS-DevTools/npm-publish@v1
-        with:
-          token: ${{ secrets.NPM_TOKEN }}
-          
-#       - if: steps.publish.outputs.type != 'none'
-#         run: |
-#           echo "Version changed: ${{ steps.publish.outputs.old-version }} => ${{ steps.publish.outputs.version }}"
-# Look into GitHub release, if easy, do it, if not, put into backlog
+        with: 
+          token: ${{ secrets.NPM_TOKEN }} 
+      - name: Find version numbers
+        if: steps.publish.outputs.type != 'none'
+        run: |
+          echo "Version changed: ${{ steps.publish.outputs.old-version }} => ${{ steps.publish.outputs.version }}"
