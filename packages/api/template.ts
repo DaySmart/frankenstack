@@ -60,6 +60,7 @@ import { CustomResponseObserverModuleInstance } from "./moduleInstances/CustomRe
 import { EventBridgeObserverModuleInstance } from "./moduleInstances/EventBridgeObserverModuleIntsance";
 import { LambdaDeciderModuleInstance } from "./moduleInstances/LambdaDeciderModuleInstance";
 import { LoggerModuleInstance } from "./moduleInstances/LoggerModuleInstance";
+import { SingletonLambdaDeciderModuleInstance } from "./moduleInstances/SingletonLambdaDeciderModuleInstance";
 import { SnsTopicObserverModuleInstance } from "./moduleInstances/SnsTopicObserverModuleInstance";
 import { getComponentLookup } from "./src/utils/parseInputs";
 import { getProviderAccountComponentLookups } from "./src/utils/providerLookups";
@@ -256,7 +257,7 @@ export function getTemplate(): Template {
           {
             entity: Deployment.ENTITY_NAME,
             type: Deployment.TYPE,
-            cell: new LambdaDeciderModuleInstance(
+            cell: new SingletonLambdaDeciderModuleInstance(
               Component.ENTITY_NAME,
               Component.TYPE,
               Deployment.ENTITY_NAME,
