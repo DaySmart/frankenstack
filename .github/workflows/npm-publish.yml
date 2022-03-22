@@ -10,11 +10,10 @@ jobs:
       - id: publish
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
-        with:
-          node-version: '16.x'
       - uses: JS-DevTools/npm-publish@v1
         with: 
           token: ${{ secrets.NPM_TOKEN }}
+      - name: Get version number
       - if: steps.publish.output.type != 'none'
         run: |
           echo "Version changed: ${{ steps.published.outputs.old-version }} => ${{ steps.publish.outputs.version }}"
