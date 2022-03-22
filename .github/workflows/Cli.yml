@@ -7,25 +7,22 @@ on:
       - 'packages/api/**'
 jobs:
   Publish-package:
+    name: npm-publish
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-      - run: echo "Publishing to NPM"
-      - name: Run build
-        run: npm build
-      - name: NPM publish
-      - id: publish
-        uses: JS-DevTools/npm-publish@v1
-        with: 
-          token: ${{ secrets.NPM_TOKEN }}
-
-  Finding-NPM-Version:
-    needs: Publish-package
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Find versions
+      - name: npm build
+        working-directory: ./packages/api
+        run: npm run build
+      - name: checkout repo
+        uses: actions/checkout@v2
+      - name: publish version
+        id: publish
+        uses: pascalgn/npm-publish-action@1.3.8
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: version number
+        if: steps.publish.output.type != 'none'
         run: |
-          echo "Version changed: ${{ steps.publish.outputs.old-version }} => ${{ steps.publish.outputs.version }}"
+          echo "Version changed: ${{ steps.published.outputs.old-version }} => ${{ steps.publish.outputs.version }}"
 # Look into GitHub release, if easy, do it, if not, put into backlog
+#  Npm run build... then publish
