@@ -21,6 +21,7 @@ jobs:
       - name: publish version
         id: publish
         run: npm publish
+        working-directory: ./packages/appsync-client
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: version number
