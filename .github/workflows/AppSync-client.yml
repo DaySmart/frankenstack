@@ -9,17 +9,22 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
+        with: 
+          node-version: 16
+          registry-url: https://registry.npmjs.org/
+      - name: Install depenedencies
+        run: npm install
+        working-directory: ./packages/appsync-client
       - name: Build
         run: npm run build
         working-directory: ./packages/appsync-client
-      - name: checkout repo
-        uses: actions/checkout@v2
       - name: publish version
         id: publish
-        uses: pascalgn/npm-publish-action@1.3.8
+        run: npm publish
+        working-directory: ./packages/appsync-client
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: version number
         if: steps.publish.output.type != 'none'
         run: |
-          echo "Version changed: ${{ steps.published.outputs.old-version }} => ${{ steps.publish.outputs.version }}"
+          echo "Version changed: ${{ steps.publish.outputs.old-version }} => ${{ steps.publish.outputs.version }}"
