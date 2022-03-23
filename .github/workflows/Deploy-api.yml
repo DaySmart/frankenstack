@@ -1,0 +1,25 @@
+name: Deploy Api
+on: 
+  push:
+    branches:
+      - deploy-api
+jobs:
+  Publish-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: install dependencies
+        run: npm install
+        working-directory: ./packages/api
+      - name: Unit Tests
+        working-directory: ./packages/api
+        run: npm test
+      - name: Configure AWS for Prod
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_NONPROD_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_NONPROD_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Deploy to Taylor
+        working-directory: ./packages/api
+        run: npx sls deploy -v --stageOverride taylor
