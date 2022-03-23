@@ -4,7 +4,7 @@ on:
     branches:
       - github-actions
     paths:
-      - 'packages/api/**'
+      - 'packages/cli/**'
 jobs:
   Publish-package:
     runs-on: ubuntu-latest
