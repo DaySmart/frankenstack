@@ -25,7 +25,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.40.1",
     "@aws-sdk/credential-provider-node": "^3.22.0",
-    "@daysmart/frankenstack-appsync-client": "1.4.0",
+    "@daysmart/frankenstack-appsync-client": "file:../appsync-client",
     "@aws-sdk/lib-storage": "^3.40.1",
     "archiver": "^5.3.0",
     "aws-sdk": "^2.829.0",

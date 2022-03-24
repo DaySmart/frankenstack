@@ -23,3 +23,23 @@ export const getComponentRollbackStateFull = `query GetComponentRollbackState($e
     }
   }
   `;
+
+export const describeComponentFull = `query DescribeComponent($env: String!, $componentName: String!) {
+    describeComponent(env: $env, componentName: $componentName) {
+      deploymentGuid
+      env
+      name
+      status
+      create
+      update
+      outputs {
+        name
+        value
+      }
+      inputs {
+          name
+          value
+      }
+    }
+  }
+  `;

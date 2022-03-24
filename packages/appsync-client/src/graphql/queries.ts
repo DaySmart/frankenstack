@@ -22,3 +22,14 @@ export const getResolvedInputs = `query GetResolvedInputs($env: String!, $compon
   }
 }
 `;
+export const describeComponent = `query DescribeComponent($env: String!, $componentName: String!) {
+  describeComponent(env: $env, componentName: $componentName) {
+    deploymentGuid
+    env
+    name
+    status
+    create
+    update
+  }
+}
+`;

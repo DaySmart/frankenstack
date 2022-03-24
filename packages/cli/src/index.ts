@@ -10,6 +10,7 @@ const stream = require('stream');
 import { defaultProvider } from '@aws-sdk/credential-provider-node';
 import { S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
+import { env } from 'process';
 
 
 interface CustomNodeJsGlobal extends NodeJS.Global {
@@ -62,6 +63,12 @@ export default class Deployer {
             await this.putIAM(this.config._[3]);
         } else if(this.command === 'remove'){
             await this.remove(this.config._[3], this.config._[4]);  
+        } else if(this.command === 'component') {
+            if(this.config._[3] === 'describe') {
+                await this.describeComponent(this.config._[4], this.config._[5]);
+            } else {
+                console.error(`The command component ${this.config._[3]} is not implemented`)
+            }
         } else {
             console.error(`The command ${this.command} is not implemented`);
         }
@@ -189,6 +196,35 @@ export default class Deployer {
             componentName: componenentName
         })
         this.subscribeToDeploymentUpdates(client);
+    }
+
+    async describeComponent(environment: string, componentName: string) {
+        const creds = await defaultProvider({})();
+        AWS.config.credentials = creds;
+        const awsconfig = await ssmConfig(creds, this.config.stageOveride);
+        const client = new EnvironmentServiceAppSyncClient(
+            awsconfig,
+            creds //await (new CredentialProviderChain()).resolvePromise()
+        )
+        console.log(`Looking up component ${environment} ${componentName}`);
+        try {
+            const resp = await client.describeComponent(environment, componentName);
+            if(resp.data && resp.data.describeComponent) {
+                const component = resp.data.describeComponent;
+                console.log(`${component.env} ${component.name}
+Created: ${new Date(component.create).toUTCString()}
+Last Deployment (${component.deploymentGuid}): ${component.status} at ${new Date(component.update).toUTCString()}
+Inputs:
+${component.inputs ? component.inputs.map((input: any) => `${input.name}: ${input.value}`).join('\n') : 'none'}
+Outputs:
+${component.outputs ? component.outputs.map((output: any) => `${output.name}: ${output.value}`).join('\n') : 'none'}
+            `)
+            } else {
+                console.error(`Could not find component!`)
+            }
+        } catch(err) {
+            console.error(`Could not find component!`)
+        }
     }
 
     async deployTemplate(client: EnvironmentServiceAppSyncClient, template: Template) {
