@@ -2,7 +2,7 @@ name: Deploy Api
 on: 
   push:
     branches:
-      - main
+      - master
 jobs:
   Publish-package:
     runs-on: ubuntu-latest
