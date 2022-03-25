@@ -14,8 +14,8 @@ export type ProviderInput = {
 };
 
 export type KeyValueInput = {
-  name: string,
-  value: string,
+  name?: string | null,
+  value?: string | null,
 };
 
 export type Template = {
@@ -90,6 +90,33 @@ export type GetResolvedInputsQuery = {
     name: string,
     value: string,
   } | null > | null,
+};
+
+export type DescribeComponentQueryVariables = {
+  env: string,
+  componentName: string,
+};
+
+export type DescribeComponentQuery = {
+  describeComponent:  {
+    __typename: "Component",
+    deploymentGuid: string,
+    env: string,
+    name: string,
+    inputs:  Array< {
+      __typename: "KeyValue",
+      name: string,
+      value: string,
+    } | null > | null,
+    outputs:  Array< {
+      __typename: "KeyValue",
+      name: string,
+      value: string,
+    } | null > | null,
+    status: string,
+    create: string,
+    update: string,
+  } | null,
 };
 
 export type SendDeploymentFormMutationVariables = {

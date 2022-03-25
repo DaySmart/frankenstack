@@ -23,7 +23,8 @@ describe('DeploymentUpdateDecider_JobRunUpdateHandler', () => {
         ComponentName: 'testComponentName',
         Type: 'CODEBUILD',
         CloudWatchLogGroup: 'group',
-        CloudWatchLogStream: 'stream'
+        CloudWatchLogStream: 'stream',
+        Env: 'dev'
       }, generateTraceId()
     );
     const dependentObservations = [[jobRun]];

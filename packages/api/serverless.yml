@@ -296,6 +296,15 @@ resources:
         FieldName: getComponentRollbackState
         DataSourceName:
           Fn::GetAtt: [GraphQlDsGraphqlRequestObserver, Name]
+    DescribeComponentQueryRequestObserverResolver:
+      Type: "AWS::AppSync::Resolver"
+      Properties:
+        ApiId:
+          Fn::GetAtt: [GraphQlApi, ApiId]
+        TypeName: Query
+        FieldName: describeComponent
+        DataSourceName:
+          Fn::GetAtt: [GraphQlDsGraphqlRequestObserver, Name]
     ResolveInputsQueryRequestObserverResolver:
       Type: "AWS::AppSync::Resolver"
       Properties:

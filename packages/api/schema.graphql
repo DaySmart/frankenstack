@@ -50,6 +50,11 @@ type Query {
     env: String!
     component: InputComponent!
   ): [KeyValue]
+
+  describeComponent(
+    env: String!
+    componentName: String!
+  ): Component
 }
 
 type DeploymentUpdate {
@@ -99,8 +104,8 @@ input ProviderInput {
 
 
 input KeyValueInput {
-    name: String!
-    value: String!
+    name: String
+    value: String
 }
 
 input Statement {
@@ -116,4 +121,15 @@ enum Effect {
 
 type DeploymentStatus {
   status: String
+}
+
+type Component {
+  deploymentGuid: String!
+  env: String!
+  name: String!
+  inputs: [KeyValue]
+  outputs: [KeyValue]
+  status: String!
+  create: String!
+  update: String!
 }
