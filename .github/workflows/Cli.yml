@@ -30,5 +30,3 @@ jobs:
         if: steps.publish.output.type != 'none'
         run: |
           echo "Version changed: ${{ steps.publish.outputs.old-version }} => ${{ steps.publish.outputs.version }}"
-# Look into GitHub release, if easy, do it, if not, put into backlog
-#  Npm run build... then publish
