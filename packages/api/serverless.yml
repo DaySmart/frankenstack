@@ -8,7 +8,7 @@ provider:
   name: aws
   runtime: nodejs12.x
   layers:
-    - arn:aws:lambda:${self:custom.config.DSI_AWS_REGION}:451483290750:layer:NewRelicNodeJS14X:37
+    - arn:aws:lambda:${opt:region, self:provider.region}:451483290750:layer:NewRelicNodeJS14X:37
   region: us-east-1
   memorySize: 1024
   timeout: 5
@@ -18,17 +18,35 @@ provider:
     STAGE: ${opt:stage}
     PLUGIN_TS_AWS_DYNAMODB_TABLE: ${self:service.name}-${opt:stage}
     HTTP_ACTION_FUNCTION_NAME: ${self:service.name}-${opt:stage}-httpAction
-    HTTP_ACTION_FUNCTION_ARN: arn:aws:lambda:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:function:${self:service.name}-${opt:stage}-httpAction
+    HTTP_ACTION_FUNCTION_ARN: { 
+      Fn::Join: [
+        "", 
+        [
+          "arn:aws:lambda:${opt:region, self:provider.region}:",
+          {"Ref": "AWS::AccountId"},
+          ":function:${self:service.name}-${opt:stage}-httpAction"
+        ]
+      ]
+    }
     DECIDER_LAMBDA_FUNCTION_NAME: ${self:service.name}-${opt:stage}-lambdaDecider
     SINGLETON_DECIDER_LAMBDA_FUNCTION_NAME: ${self:service.name}-${opt:stage}-singletonLambdaDecider
     CUSTOM_ACTOR_FUNCTION_NAME: ${self:service.name}-${opt:stage}-customActor
     DEBUG: ${self:custom.isProd.${opt:stage}, self:custom.isProd.other}
     S3_BUCKET: { "Ref": "DeploymentPackageBucket" }
     JOB_RUN_CLOUDWATCH_LOG_GROUP: ${opt:stage}-${self:service.name}-deployments
-    JOB_RUN_FINISH_SNS_TOPIC: arn:aws:sns:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:${self:service.name}-${opt:stage}-job-run-finished
+    JOB_RUN_FINISH_SNS_TOPIC: { 
+      Fn::Join: [
+        "", 
+        [
+          "arn:aws:lambda:${opt:region, self:provider.region}:",
+          {"Ref": "AWS::AccountId"},
+          ":${self:service.name}-${opt:stage}-job-run-finished"
+        ]
+      ]
+    }
     CODE_BUILD_LOG_GROUP: { "Ref": "CodeBuildCloudwatchLogGroup" }
-    NEW_RELIC_ACCOUNT_ID: ${self:custom.config.NEW_RELIC_ACCOUNT_ID}
-    NEW_RELIC_LICENSE_KEY: ${self:custom.config.NEW_RELIC_API_KEY}
+    NEW_RELIC_ACCOUNT_ID: ${ssm:/new-relic-account~true, ""}
+    NEW_RELIC_LICENSE_KEY: ${ssm:/new-relic-api-key~true, ""}
     NEW_RELIC_LAMBDA_EXTENSION_ENABLED: true
     NEW_RELIC_EXTENSION_SEND_FUNCTION_LOGS: true
     NEW_RELIC_EXTENSION_LOG_LEVEL: DEBUG
@@ -37,20 +55,74 @@ provider:
       Action:
         - "dynamodb:*"
       Resource:
-        - "arn:aws:dynamodb:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:table/${self:provider.environment.PLUGIN_TS_AWS_DYNAMODB_TABLE}"
-        - "arn:aws:dynamodb:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:table/${self:provider.environment.PLUGIN_TS_AWS_DYNAMODB_TABLE}/*"
+        - { 
+            Fn::Join: [
+              "", 
+              [
+                "arn:aws:dynamodb:${opt:region, self:provider.region}:",
+                {"Ref": "AWS::AccountId"},
+                ":table/${self:provider.environment.PLUGIN_TS_AWS_DYNAMODB_TABLE}"
+              ]
+            ]
+          }
+        - { 
+            Fn::Join: [
+              "", 
+              [
+                "arn:aws:dynamodb:${opt:region, self:provider.region}:",
+                {"Ref": "AWS::AccountId"},
+                ":table/${self:provider.environment.PLUGIN_TS_AWS_DYNAMODB_TABLE}/*"
+              ]
+            ]
+          }
     - Effect: "Allow"
       Action:
         - "lambda:InvokeFunction"
       Resource:
-        - arn:aws:lambda:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:function:${self:service}-${opt:stage, self:provider.sandbox}*
-        - arn:aws:lambda:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:function:provider-*
+        - { 
+            Fn::Join: [
+              "", 
+              [
+                "arn:aws:lambda:${opt:region, self:provider.region}:",
+                {"Ref": "AWS::AccountId"},
+                ":function:${self:service}-${opt:stage, self:provider.sandbox}*"
+              ]
+            ]
+          }
+        - { 
+            Fn::Join: [
+              "", 
+              [
+                "arn:aws:lambda:${opt:region, self:provider.region}:",
+                {"Ref": "AWS::AccountId"},
+                ":function:provider-*"
+              ]
+            ]
+          }
     - Effect: "Allow"
       Action: "sqs:SendMessage"
-      Resource: "arn:aws:sqs:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:*"
+      Resource: { 
+        Fn::Join: [
+          "", 
+          [
+            "arn:aws:sqs:${opt:region, self:provider.region}:",
+            {"Ref": "AWS::AccountId"},
+            ":*"
+          ]
+        ]
+      } 
     - Effect: "Allow"
       Action: "ssm:GetParameter"
-      Resource: "arn:aws:ssm:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:parameter/${opt:stage}-${self:service}-amplify-config"
+      Resource: { 
+        Fn::Join: [
+          "", 
+          [
+            "arn:aws:ssm:${opt:region, self:provider.region}:",
+            {"Ref": "AWS::AccountId"},
+            ":parameter/${opt:stage}-${self:service}-amplify-config"
+          ]
+        ]
+      } 
     - Effect: "Allow"
       Action:
         - "appsync:GraphQL"
@@ -63,7 +135,9 @@ provider:
             [
               "",
               [
-                "arn:aws:appsync:${self:custom.config.DSI_AWS_REGION}:${self:custom.config.AWS_ACCOUNT}:apis/",
+                "arn:aws:appsync:${opt:region, self:provider.region}:",
+                {"Ref": "AWS::AccountId"},
+                ":apis/",
                 { "Fn::GetAtt": ["GraphQlApi", "ApiId"] },
                 "*",
               ],
@@ -93,7 +167,6 @@ package:
     - ../../node_modules/
 
 custom:
-  config: ${file(infrastructure/config.${opt:stage, self:provider.sandbox}.yml)}
   isProd:
     prod: "true"
     other: "false"
