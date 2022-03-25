@@ -5,6 +5,7 @@ on:
       - master
     paths:
       - 'packages/api/**'
+      - '.github/workflows/deploy-api.yml'
 jobs:
   Deploy:
     runs-on: ubuntu-latest
