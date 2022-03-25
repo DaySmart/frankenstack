@@ -1,5 +1,4 @@
 import { Context } from "o18k-ts-aws";
-import { cpuUsage } from "process";
 import { Component } from "../Entities/Component";
 import { IEntityObservation } from "../Entities/IEntityObservation";
 import { JobRunFinished } from "../Entities/JobRunFinished";

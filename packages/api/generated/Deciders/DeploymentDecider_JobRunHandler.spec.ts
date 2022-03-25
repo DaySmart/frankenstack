@@ -30,7 +30,8 @@ describe('DeploymentDecider JobRunHandler', () => {
             JobRunGuid: 'hijklmnop',
             Type: 'CODEBUILD',
             CloudWatchLogGroup: 'loggroup',
-            CloudWatchLogStream: 'abcdefg'
+            CloudWatchLogStream: 'abcdefg',
+            Env: 'dev'
         };
 
         const jobRunObservation = createNewObservation(
@@ -75,7 +76,8 @@ describe('DeploymentDecider JobRunHandler', () => {
             Type: 'CODEBUILD',
             CloudWatchLogGroup: 'loggroup',
             CloudWatchLogStream: 'abcdefg',
-            Error: 'Bad'
+            Error: 'Bad',
+            Env: 'dev'
         };
 
         const jobRunObservation = createNewObservation(

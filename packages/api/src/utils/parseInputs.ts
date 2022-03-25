@@ -161,7 +161,7 @@ export function resolveReferencesForDeploymentRequestComponent(
                             variableName,
                             dependentComponentObservations
                         )
-                    } catch(err) {
+                    } catch(err: any) {
                         resolvedInputs[j].FailedLookupStatus = 'DEPLOYMENT_FAILED';
                         resolvedInputs[j].FailedLookupMessage = err.message;
                     }

@@ -13,7 +13,8 @@ describe('DeploymentUpdateDecider_JobRunHandler', () => {
         ComponentName: 'testComponentName',
         Type: 'CODEBUILD',
         CloudWatchLogGroup: 'group',
-        CloudWatchLogStream: 'stream'
+        CloudWatchLogStream: 'stream',
+        Env: 'dev'
       }, generateTraceId()
     );
 
@@ -33,7 +34,8 @@ describe('DeploymentUpdateDecider_JobRunHandler', () => {
         Type: 'CODEBUILD',
         CloudWatchLogGroup: 'group',
         CloudWatchLogStream: 'stream',
-        Error: 'Exception: It broke'
+        Error: 'Exception: It broke',
+        Env: 'dev'
       }, generateTraceId()
     );
 
