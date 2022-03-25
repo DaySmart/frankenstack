@@ -38,7 +38,7 @@ provider:
       Fn::Join: [
         "", 
         [
-          "arn:aws:lambda:${opt:region, self:provider.region}:",
+          "arn:aws:sns:${opt:region, self:provider.region}:",
           {"Ref": "AWS::AccountId"},
           ":${self:service.name}-${opt:stage}-job-run-finished"
         ]
