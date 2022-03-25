@@ -2,7 +2,7 @@ name: AppSync Client build and publish
 on: 
   push:
     branches:
-      - github-actions
+      - master
 jobs:
   Publish-package:
     runs-on: ubuntu-latest

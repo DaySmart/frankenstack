@@ -2,7 +2,7 @@ name: Deploy CLI
 on: 
   push:
     branches:
-      - github-actions
+      - master
     paths:
       - 'packages/cli/**'
 jobs:
