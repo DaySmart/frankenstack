@@ -26,6 +26,6 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_NONPROD_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_NONPROD_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-      - name: Deploy to Taylor
+      - name: Deploy to Prod
         working-directory: ./packages/api
-        run: npx sls deploy -v --stage taylor
+        run: npx sls deploy -v --stage prod
