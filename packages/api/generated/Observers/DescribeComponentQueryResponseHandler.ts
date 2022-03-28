@@ -2,6 +2,7 @@ import { Context, IEntityObservation, Observation2 } from "o18k-ts-aws";
 import { Component } from "../Entities/Component";
 import { ComponentDeployment } from "../Entities/ComponentDeployment";
 import { DescribeComponentQuery } from "../Entities/DescribeComponentQuery";
+const MaskData = require('maskdata');
 
 export function DescribeComponentQueryResponseHandler(
   _observation: Observation2<DescribeComponentQuery.EntityObservation>,
@@ -30,6 +31,8 @@ export function DescribeComponentQueryResponseHandler(
     return {};
   }
 
+  const componentIsSecret = componentDeployment.data.Provider.Name === 'secrets';
+
   return {
     deploymentGuid: component.data.DeploymentGuid,
     env: component.data.Env,
@@ -41,7 +44,13 @@ export function DescribeComponentQueryResponseHandler(
       ? componentDeployment.data.Inputs.map(input => {
           return {
             name: input.Key,
-            value: input.Value
+            value: componentIsSecret ? 
+              MaskData.maskPassword(input.Value, {
+                maskWith: '*', 
+                maxMaskedCharacters: 20,
+                unmaskedStartCharacters: 1,
+                unmaskedEndCharacters: 1
+              }) : input.Value
           };
         })
       : undefined,
