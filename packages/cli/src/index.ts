@@ -68,7 +68,7 @@ export default class Deployer {
         } else if (this.command === 'rollback') { 
             await this.rollback(this.config._[3], this.config._[4], client);
         } else if(this.command === 'iam') {
-            await this.putIAM(this.config._[3]);
+            await this.putIAM(this.config._[3], client);
         } else if(this.command === 'remove'){
             await this.remove(this.config._[3], this.config._[4], client);  
         } else if(this.command === 'component') {
@@ -234,15 +234,8 @@ ${component.outputs ? component.outputs.map((output: any) => `${output.name}: ${
         });
     }
 
-    async putIAM(file: string) {
+    async putIAM(file: string, client: EnvironmentServiceAppSyncClient) {
         var template = parseYaml(file);
-        const creds = await defaultProvider({})();
-        const awsconfig = await ssmConfig(creds, this.config.stageOveride);
-
-        const client = new EnvironmentServiceAppSyncClient(
-            awsconfig,
-            creds
-        )
 
         if(template.policies) {
             for(var policy of template.policies) {
