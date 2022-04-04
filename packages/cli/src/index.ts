@@ -66,14 +66,14 @@ export default class Deployer {
         if(this.command === 'deploy') {
             await this.deploy(this.config._[3], creds, awsconfig, client);
         } else if (this.command === 'rollback') { 
-            await this.rollback(this.config._[3], this.config._[4], client);
+            await this.rollback(this.config._[3], this.config._[4], creds, awsconfig, client);
         } else if(this.command === 'iam') {
-            await this.putIAM(this.config._[3], client);
+            await this.putIAM(this.config._[3], creds, awsconfig, client);
         } else if(this.command === 'remove'){
-            await this.remove(this.config._[3], this.config._[4], client);  
+            await this.remove(this.config._[3], this.config._[4], creds, awsconfig, client);  
         } else if(this.command === 'component') {
             if(this.config._[3] === 'describe') {
-                await this.describeComponent(this.config._[4], this.config._[5], client);
+                await this.describeComponent(this.config._[4], this.config._[5], creds, awsconfig, client);
             } else {
                 console.error(`The command component ${this.config._[3]} is not implemented`)
             }
@@ -126,7 +126,7 @@ export default class Deployer {
         await this.deployTemplate(client, template);
     }
 
-    async rollback(environment: string, componentName: string, client: EnvironmentServiceAppSyncClient) {
+    async rollback(environment: string, componentName: string, creds: any, awsconfig: any, client: EnvironmentServiceAppSyncClient) {
         const rollbackComponentResp = await client.getComponentRollback(environment, componentName);
 
         if(rollbackComponentResp.data) {
@@ -173,7 +173,7 @@ export default class Deployer {
         }
     }
 
-    async remove(environment: string, componenentName: string, client: EnvironmentServiceAppSyncClient) {
+    async remove(environment: string, componenentName: string, creds: any, awsconfig: any, client: EnvironmentServiceAppSyncClient) {
         console.log(`Removing component ${environment}:${componenentName}`);
         await client.removeComponent({
             deploymentGuid: this.deploymentGuid,
@@ -183,7 +183,7 @@ export default class Deployer {
         this.subscribeToDeploymentUpdates(client);
     }
 
-    async describeComponent(environment: string, componentName: string, client: EnvironmentServiceAppSyncClient) {
+    async describeComponent(environment: string, componentName: string, creds: any, awsconfig: any, client: EnvironmentServiceAppSyncClient) {
         console.log(`Looking up component ${environment} ${componentName}`);
         try {
             const resp = await client.describeComponent(environment, componentName);
@@ -234,7 +234,7 @@ ${component.outputs ? component.outputs.map((output: any) => `${output.name}: ${
         });
     }
 
-    async putIAM(file: string, client: EnvironmentServiceAppSyncClient) {
+    async putIAM(file: string, creds: any, awsconfig: any, client: EnvironmentServiceAppSyncClient) {
         var template = parseYaml(file);
 
         if(template.policies) {
