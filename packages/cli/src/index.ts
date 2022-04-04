@@ -46,6 +46,7 @@ export default class Deployer {
     public command: any;
     public deploymentGuid: any;
     public config: any;
+    public client: any;
 
     constructor(command: any, file: string, config?: any) {
         this.file = file;
@@ -55,17 +56,24 @@ export default class Deployer {
     }
 
     async run() {
+        const creds = await defaultProvider({profile: this.config.profile})();
+        AWS.config.credentials = creds;
+        const awsconfig = await ssmConfig(creds, this.config.stageOveride);
+        const client = new EnvironmentServiceAppSyncClient(
+            awsconfig,
+            creds //await (new CredentialProviderChain()).resolvePromise()
+        )
         if(this.command === 'deploy') {
-            await this.deploy(this.config._[3]);
+            await this.deploy(this.config._[3], creds, awsconfig, client);
         } else if (this.command === 'rollback') { 
-            await this.rollback(this.config._[3], this.config._[4]);
+            await this.rollback(this.config._[3], this.config._[4], client);
         } else if(this.command === 'iam') {
             await this.putIAM(this.config._[3]);
         } else if(this.command === 'remove'){
-            await this.remove(this.config._[3], this.config._[4]);  
+            await this.remove(this.config._[3], this.config._[4], client);  
         } else if(this.command === 'component') {
             if(this.config._[3] === 'describe') {
-                await this.describeComponent(this.config._[4], this.config._[5]);
+                await this.describeComponent(this.config._[4], this.config._[5], client);
             } else {
                 console.error(`The command component ${this.config._[3]} is not implemented`)
             }
@@ -74,12 +82,9 @@ export default class Deployer {
         }
     }
 
-    async deploy(file: string) {
+    async deploy(file: string, creds: any, awsconfig: any, client: EnvironmentServiceAppSyncClient) {
         const template: Template = this.parseComponentTemplate(file);
         console.log('Created deployment', this.deploymentGuid);
-        const creds = await defaultProvider({})();
-        AWS.config.credentials = creds;
-        const awsconfig = await ssmConfig(creds, this.config.stageOveride);
         console.log("Packaging project...")
 
         const output = new stream.PassThrough();
@@ -117,24 +122,11 @@ export default class Deployer {
         });
         await upload.done();
         console.log("Packaging complete!");
-        
-        const client = new EnvironmentServiceAppSyncClient(
-            awsconfig,
-            creds
-        )
 
         await this.deployTemplate(client, template);
     }
 
-    async rollback(environment: string, componentName: string) {
-        const creds = await defaultProvider({})();
-        const awsconfig = await ssmConfig(creds, this.config.stageOveride);
-
-        const client = new EnvironmentServiceAppSyncClient(
-            awsconfig,
-            creds
-        )
-
+    async rollback(environment: string, componentName: string, client: EnvironmentServiceAppSyncClient) {
         const rollbackComponentResp = await client.getComponentRollback(environment, componentName);
 
         if(rollbackComponentResp.data) {
@@ -181,14 +173,7 @@ export default class Deployer {
         }
     }
 
-    async remove(environment: string, componenentName: string) {
-        const creds = await defaultProvider({})();
-        AWS.config.credentials = creds;
-        const awsconfig = await ssmConfig(creds, this.config.stageOveride);
-        const client = new EnvironmentServiceAppSyncClient(
-            awsconfig,
-            creds //await (new CredentialProviderChain()).resolvePromise()
-        )
+    async remove(environment: string, componenentName: string, client: EnvironmentServiceAppSyncClient) {
         console.log(`Removing component ${environment}:${componenentName}`);
         await client.removeComponent({
             deploymentGuid: this.deploymentGuid,
@@ -198,14 +183,7 @@ export default class Deployer {
         this.subscribeToDeploymentUpdates(client);
     }
 
-    async describeComponent(environment: string, componentName: string) {
-        const creds = await defaultProvider({})();
-        AWS.config.credentials = creds;
-        const awsconfig = await ssmConfig(creds, this.config.stageOveride);
-        const client = new EnvironmentServiceAppSyncClient(
-            awsconfig,
-            creds //await (new CredentialProviderChain()).resolvePromise()
-        )
+    async describeComponent(environment: string, componentName: string, client: EnvironmentServiceAppSyncClient) {
         console.log(`Looking up component ${environment} ${componentName}`);
         try {
             const resp = await client.describeComponent(environment, componentName);
