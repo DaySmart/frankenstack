@@ -5,15 +5,16 @@ const client = new CodeBuild();
 const S3_BUCKET = process.env.S3_BUCKET;
 
 export interface CodeBuildTriggerParams {
-    deploymentGuid: string;
-    jobRunGuid: string;
-    componentName: string;
-    componentEnvironment: string;
-    componentProvider: string;
-    componentInputs?: string;
-    buildDir?: string;
-    artifactOverideGuid?: string;
-    Method?: string;
+  deploymentGuid: string;
+  jobRunGuid: string;
+  componentName: string;
+  componentEnvironment: string;
+  componentProvider: string;
+  componentInputs?: string;
+  buildDir?: string;
+  artifactOverideGuid?: string;
+  Method?: string;
+  nodejsVersion: number | undefined;
 }
 
 export module CodeBuildClient {
@@ -58,7 +59,7 @@ export module CodeBuildClient {
         }
     }
 
-    function generateBuildSpec(buildDir?: string): string {
+    function generateBuildSpec(buildDir?: string, nodejsVersion?: number): string {
         const deployerBranchName = 'env-service-refactor';
         const buildSpecObj = {
             version: '0.2',
@@ -69,7 +70,7 @@ export module CodeBuildClient {
             phases: {
                 install: {
                     'runtime-versions': {
-                        nodejs: 12
+                        nodejs: nodejsVersion ?? 12
                     },
                     commands: buildDir ? [
                         `cd ${buildDir}`,

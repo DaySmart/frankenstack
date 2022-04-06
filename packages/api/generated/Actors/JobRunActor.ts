@@ -60,12 +60,19 @@ export default async function JobRunActor(
     type = "LAMBDA";
   } else {
     let buildDir;
+    let nodejsVersion: number | undefined = undefined;
     let artifactOverideGuid;
     if (data.Provider.Config) {
       console.log("[action] providerConfig", data.Provider.Config);
       const buildDirItems = data.Provider.Config.filter(item => item.Key === "buildDir");
       if (buildDirItems.length > 0) {
         buildDir = buildDirItems[0].Value;
+      }
+      const nodejsVersionItems = data.Provider.Config.filter(
+        (item) => item.Key === "nodejsVersion"
+      );
+      if (nodejsVersionItems.length > 0 && !isNaN(parseInt(nodejsVersionItems[0].Value))) {
+        nodejsVersion = parseInt(nodejsVersionItems[0].Value);
       }
 
       const artifactOverideGuidItems = data.Provider.Config.filter(item => item.Key === "artifactOverideGuid");
@@ -74,6 +81,7 @@ export default async function JobRunActor(
       }
     }
     console.log("[action] buildDir", { builddir: buildDir });
+    console.log("[action] nodejsVersion", { nodejsversion: nodejsVersion });
 
     try {
       const codeBuildTriggerResponse = await CodeBuildClient.triggerCodeBuild(
@@ -85,7 +93,10 @@ export default async function JobRunActor(
           componentProvider: JSON.stringify(data.Provider),
           deploymentGuid: data.DeploymentGuid,
           buildDir: buildDir ? buildDir : undefined,
-          artifactOverideGuid: artifactOverideGuid ? artifactOverideGuid : undefined,
+          nodejsVersion: nodejsVersion ? nodejsVersion : undefined,
+          artifactOverideGuid: artifactOverideGuid
+            ? artifactOverideGuid
+            : undefined,
           Method: data.Method,
         },
         console.log
