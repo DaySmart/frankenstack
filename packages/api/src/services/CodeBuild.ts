@@ -23,7 +23,7 @@ export module CodeBuildClient {
             const artifactGuid = params.artifactOverideGuid ? params.artifactOverideGuid : params.deploymentGuid;
             let codeBuildParams: CodeBuild.StartBuildInput = {
                 projectName: process.env.CODE_BUILD_PROJECT as string,
-                buildspecOverride: generateBuildSpec(params.buildDir),
+                buildspecOverride: generateBuildSpec(params.buildDir, params.nodejsVersion),
                 sourceLocationOverride: `${S3_BUCKET}/${artifactGuid}.zip`,
                 privilegedModeOverride: true,
                 environmentVariablesOverride: [
