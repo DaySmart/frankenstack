@@ -45,6 +45,10 @@ export module CodeBuildClient {
                     }
                 }
             }
+            if (params.nodejsVersion === 14)
+              codeBuildParams.imageOverride = 'aws/codebuild/standard:5.0';
+
+
 
             if(params.componentInputs && codeBuildParams.environmentVariablesOverride) {
                 codeBuildParams.environmentVariablesOverride.push({name: 'COMPONENT_INPUTS', value: params.componentInputs})
