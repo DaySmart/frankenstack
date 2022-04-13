@@ -5,15 +5,16 @@ const client = new CodeBuild();
 const S3_BUCKET = process.env.S3_BUCKET;
 
 export interface CodeBuildTriggerParams {
-    deploymentGuid: string;
-    jobRunGuid: string;
-    componentName: string;
-    componentEnvironment: string;
-    componentProvider: string;
-    componentInputs?: string;
-    buildDir?: string;
-    artifactOverideGuid?: string;
-    Method?: string;
+  deploymentGuid: string;
+  jobRunGuid: string;
+  componentName: string;
+  componentEnvironment: string;
+  componentProvider: string;
+  componentInputs?: string;
+  buildDir?: string;
+  artifactOverideGuid?: string;
+  Method?: string;
+  nodejsVersion: number | undefined;
 }
 
 export module CodeBuildClient {
@@ -22,7 +23,7 @@ export module CodeBuildClient {
             const artifactGuid = params.artifactOverideGuid ? params.artifactOverideGuid : params.deploymentGuid;
             let codeBuildParams: CodeBuild.StartBuildInput = {
                 projectName: process.env.CODE_BUILD_PROJECT as string,
-                buildspecOverride: generateBuildSpec(params.buildDir),
+                buildspecOverride: generateBuildSpec(params.buildDir, params.nodejsVersion),
                 sourceLocationOverride: `${S3_BUCKET}/${artifactGuid}.zip`,
                 privilegedModeOverride: true,
                 environmentVariablesOverride: [
@@ -44,6 +45,10 @@ export module CodeBuildClient {
                     }
                 }
             }
+            if (params.nodejsVersion === 14)
+              codeBuildParams.imageOverride = 'aws/codebuild/standard:5.0';
+
+
 
             if(params.componentInputs && codeBuildParams.environmentVariablesOverride) {
                 codeBuildParams.environmentVariablesOverride.push({name: 'COMPONENT_INPUTS', value: params.componentInputs})
@@ -58,7 +63,7 @@ export module CodeBuildClient {
         }
     }
 
-    function generateBuildSpec(buildDir?: string): string {
+    function generateBuildSpec(buildDir?: string, nodejsVersion?: number): string {
         const deployerBranchName = 'env-service-refactor';
         const buildSpecObj = {
             version: '0.2',
@@ -69,7 +74,7 @@ export module CodeBuildClient {
             phases: {
                 install: {
                     'runtime-versions': {
-                        nodejs: 12
+                        nodejs: nodejsVersion ?? 12
                     },
                     commands: buildDir ? [
                         `cd ${buildDir}`,
