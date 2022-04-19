@@ -6,7 +6,12 @@ interface Account {
     credentials: string;
 }
 
-export class Provider {
+export interface ProviderExecution {
+    deploy(): Promise<void>;
+    remove(): Promise<void>;
+}
+
+export class Provider implements ProviderExecution {
     public deploymentGuid: string;
     public environment: string;
     public componentName: string;
@@ -83,7 +88,22 @@ export class Provider {
         }
     }
 
-    async provisionComponent(): Promise<void> { }
+    async provisionComponent(): Promise<void> { 
+        console.error(`Deploy is not implement for this provider`);
+        this.result = false;
+    }
+
+    async deploy(): Promise<void> {
+        await this.decryptInputs();
+        await this.provisionComponent();
+        await this.sendResponse();
+    }
+
+    async remove(): Promise<void> {
+        console.error(`Remove is not implement for this provider`);
+        this.result = false;
+        await this.sendResponse();
+    }
 
     async sendResponse() {
         let resp = {
