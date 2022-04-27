@@ -7,7 +7,7 @@ const run = async () => {
     const args = minimist(process.argv);
     process.argv = process.argv.slice(0, 2);
     const command = args._[2];
-    if(command === 'help') {
+    if(command === 'help' || args.help) {
         console.log(`
 Frankenstack v${version}
 
@@ -23,7 +23,7 @@ Options:
     --stageOveride Use non-default Frankenstack API
         `);
         process.exit(0);
-    } else if(command === 'version') {
+    } else if(command === 'version' || args.version) {
         console.log(`Frankenstack CLI v${version}`);
         process.exit(0);
     }
