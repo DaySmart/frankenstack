@@ -10,7 +10,7 @@ const stream = require('stream');
 import { defaultProvider } from '@aws-sdk/credential-provider-node';
 import { S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
-import { env } from 'process';
+import { resolveComponents, resolveInputVariables } from './utils/variables';
 
 
 interface CustomNodeJsGlobal extends NodeJS.Global {
@@ -47,12 +47,21 @@ export default class Deployer {
     public deploymentGuid: any;
     public config: any;
     public client: any;
+    public params: any;
 
     constructor(command: any, file: string, config?: any) {
         this.file = file;
         this.command = command;
         this.config = config;
         this.deploymentGuid = uuid.v4();
+        this.params = {};
+        if(config.params) {
+            try {
+                this.params = JSON.parse(config.params);
+            } catch(err) {
+                throw `Failed to parse parameters ${config.params}. Please format your parameters as valid JSON`
+            }
+        }
     }
 
     async run() {
@@ -279,26 +288,24 @@ ${component.outputs ? component.outputs.map((output: any) => `${output.name}: ${
 
     parseComponentTemplate(file: string) {
         var template = parseYaml(file);
-        template.components = template.components.map((component: any) => {
-            if(component.provider.config) {
-                component.provider.config = Object.entries(component.provider.config).map(([key, value]) => {
-                    return {
-                        name: key,
-                        value: value
-                    }
-                })
-            }
-            if(component.inputs) {
-                component.inputs = flatten(component.inputs);
-                component.inputs = Object.entries(component.inputs).map(([key, value]) => {
-                    return {
-                        name: key,
-                        value: value
-                    }
-                })
-            }
-            return component;
-        });
+        template.env = resolveInputVariables(template.env, template, this.params);
+        template = resolveComponents(template, this.params);
+        if(template.templates) {
+            template.templates.forEach((child: any) => {
+                if(!child.path) {
+                    throw "Could not resolve child template without path";
+                }
+                const childTemplatePath = resolveInputVariables(child.path, template, this.params);
+                var childTemplate = parseYaml(childTemplatePath);
+                childTemplate.env = resolveInputVariables(childTemplate.env, childTemplate, {...this.params, ...child.params});
+                if(childTemplate.env !== template.env) {
+                    throw "Child templates must have the same environment as the parent template"
+                }
+                childTemplate = resolveComponents(childTemplate, {...this.params, ...child.params});
+                template.components = template.components.concat(childTemplate.components);
+            });
+            delete template.templates;
+        }
         return template;
     }
 }
