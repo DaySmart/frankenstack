@@ -43,7 +43,7 @@ type Mutation {
       env: String!
       componentName: String!
       outputs: [KeyValueInput]
-      status: DeploymentStatus
+      status: DeploymentResult
     ): Boolean
 }
 
@@ -152,7 +152,7 @@ enum Effect {
   Deny
 }
 
-enum DeploymentStatus {
+enum DeploymentResult {
   Success
   Failed
   Deleted

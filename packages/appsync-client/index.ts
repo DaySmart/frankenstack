@@ -1,8 +1,8 @@
-import { sendDeploymentForm, deploymentUpdate, putPolicy, putUser, removeComponent } from './src/graphql/mutations';
+import { sendDeploymentForm, deploymentUpdate, putPolicy, putUser, removeComponent, jobRunRequest } from './src/graphql/mutations';
 import gql from 'graphql-tag';
-import { subscribeToDeploymentUpdate } from './src/graphql/subscriptions';
+import { subscribeToDeploymentUpdate, subscribeToJobRunRequests } from './src/graphql/subscriptions';
 import { Observable } from 'apollo-client/util/Observable'
-import { DeploymentUpdateMutationVariables, InputComponent, PutPolicyMutationVariables, PutUserMutationVariables, RemoveComponentMutation, RemoveComponentMutationVariables, Template } from './src/graphql/types';
+import { DeploymentUpdateMutationVariables, InputComponent, JobRunRequestMutationVariables, PutPolicyMutationVariables, PutUserMutationVariables, RemoveComponentMutation, RemoveComponentMutationVariables, Template } from './src/graphql/types';
 import { FetchResult } from 'apollo-link';
 import { getComponentRollbackStateFull, describeComponentFull } from './src/graphql/customQueries';
 import { getResolvedInputs } from './src/graphql/queries';
@@ -108,9 +108,25 @@ export class EnvironmentServiceAppSyncClient {
         });
     }
 
+    async requestJobRun(mutation: JobRunRequestMutationVariables): Promise<FetchResult> {
+        return await this.client.mutate({
+            mutation: gql(jobRunRequest),
+            variables: mutation
+        });
+    }
+
     subscribeToDeploymentUpdate(deploymentGuid: string): Observable<any> {
         return this.client.subscribe({
             query: gql(subscribeToDeploymentUpdate),
+            variables: {
+                deploymentGuid: deploymentGuid
+            }
+        });
+    }
+
+    subscribeToJobRunRequests(deploymentGuid: string): Observable<any> {
+        return this.client.subscribe({
+            query: gql(subscribeToJobRunRequests),
             variables: {
                 deploymentGuid: deploymentGuid
             }

@@ -12,3 +12,11 @@ export const subscribeToDeploymentUpdate = `subscription SubscribeToDeploymentUp
   }
 }
 `;
+export const subscribeToJobRunRequests = `subscription SubscribeToJobRunRequests($deploymentGuid: ID!) {
+  subscribeToJobRunRequests(deploymentGuid: $deploymentGuid) {
+    deploymentGuid
+    jobRunGuid
+    env
+  }
+}
+`;

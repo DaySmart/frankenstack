@@ -35,6 +35,13 @@ export enum Effect {
 }
 
 
+export enum DeploymentResult {
+  Success = "Success",
+  Failed = "Failed",
+  Deleted = "Deleted",
+}
+
+
 export type GetDeploymentStatusQueryVariables = {
   deploymentGuid?: string | null,
 };
@@ -178,6 +185,53 @@ export type RemoveComponentMutation = {
   RemoveComponent: boolean | null,
 };
 
+export type JobRunRequestMutationVariables = {
+  deploymentGuid: string,
+  jobRunGuid: string,
+  env: string,
+  component: InputComponent,
+};
+
+export type JobRunRequestMutation = {
+  jobRunRequest:  {
+    __typename: "JobRunRequest",
+    deploymentGuid: string,
+    jobRunGuid: string,
+    env: string,
+    component:  {
+      __typename: "JobRunComponent",
+      name: string,
+      provider:  {
+        __typename: "Provider",
+        name: string,
+      },
+      inputs:  Array< {
+        __typename: "KeyValue",
+        name: string,
+        value: string,
+      } | null > | null,
+      outputs:  Array< {
+        __typename: "KeyValue",
+        name: string,
+        value: string,
+      } | null > | null,
+    },
+  } | null,
+};
+
+export type JobRunFinishedMutationVariables = {
+  deploymentGuid: string,
+  jobRunGuid: string,
+  env: string,
+  componentName: string,
+  outputs?: Array< KeyValueInput | null > | null,
+  status?: DeploymentResult | null,
+};
+
+export type JobRunFinishedMutation = {
+  jobRunFinished: boolean | null,
+};
+
 export type SubscribeToDeploymentUpdateSubscriptionVariables = {
   deploymentGuid: string,
 };
@@ -191,5 +245,36 @@ export type SubscribeToDeploymentUpdateSubscription = {
     moreInfoComponentName: string | null,
     moreInfoType: string | null,
     moreInfoKey: string | null,
+  } | null,
+};
+
+export type SubscribeToJobRunRequestsSubscriptionVariables = {
+  deploymentGuid: string,
+};
+
+export type SubscribeToJobRunRequestsSubscription = {
+  subscribeToJobRunRequests:  {
+    __typename: "JobRunRequest",
+    deploymentGuid: string,
+    jobRunGuid: string,
+    env: string,
+    component:  {
+      __typename: "JobRunComponent",
+      name: string,
+      provider:  {
+        __typename: "Provider",
+        name: string,
+      },
+      inputs:  Array< {
+        __typename: "KeyValue",
+        name: string,
+        value: string,
+      } | null > | null,
+      outputs:  Array< {
+        __typename: "KeyValue",
+        name: string,
+        value: string,
+      } | null > | null,
+    },
   } | null,
 };

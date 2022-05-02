@@ -50,3 +50,39 @@ export const removeComponent = `mutation RemoveComponent(
   )
 }
 `;
+export const jobRunRequest = `mutation JobRunRequest(
+  $deploymentGuid: ID!
+  $jobRunGuid: String!
+  $env: String!
+  $component: InputComponent!
+) {
+  jobRunRequest(
+    deploymentGuid: $deploymentGuid
+    jobRunGuid: $jobRunGuid
+    env: $env
+    component: $component
+  ) {
+    deploymentGuid
+    jobRunGuid
+    env
+  }
+}
+`;
+export const jobRunFinished = `mutation JobRunFinished(
+  $deploymentGuid: String!
+  $jobRunGuid: ID!
+  $env: String!
+  $componentName: String!
+  $outputs: [KeyValueInput]
+  $status: DeploymentResult
+) {
+  jobRunFinished(
+    deploymentGuid: $deploymentGuid
+    jobRunGuid: $jobRunGuid
+    env: $env
+    componentName: $componentName
+    outputs: $outputs
+    status: $status
+  )
+}
+`;
