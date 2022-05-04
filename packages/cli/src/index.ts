@@ -149,6 +149,27 @@ export default class Deployer {
 
             let providerConfig = componentDeployment.provider.config.filter((item: any) => item.name !== 'artifactOverideGuid');
 
+            let inputs;
+            const resolvedInputs = (await client.getResolvedInputs(environment, componentDeployment)).data;
+
+            if(resolvedInputs){
+                inputs = resolvedInputs.map((input: any) => {
+                    return {
+                        name: input.name,
+                        value: input.value
+                    }
+                })
+            } else if (componentDeployment.inputs){
+                inputs = componentDeployment.inputs.map((input: any) => {
+                    return {
+                        name: input.name,
+                        value: input.value
+                    }
+                })
+            } else {
+                inputs = undefined;
+            }
+
             const template: Template = {
                 env: componentDeployment.env,
                 components: [{
@@ -167,12 +188,7 @@ export default class Deployer {
                             })
                         ]
                     },
-                    inputs: componentDeployment.inputs ? componentDeployment.inputs.map((input: any) => {
-                        return {
-                            name: input.name,
-                            value: input.value
-                        }
-                    }) : undefined
+                    inputs: inputs
                 }]
             }
 
