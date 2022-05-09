@@ -138,8 +138,11 @@ export default class Deployer {
     async rollback(environment: string, componentName: string, client: EnvironmentServiceAppSyncClient) {
         const rollbackComponentResp = await client.getComponentRollback(environment, componentName);
 
+
         if(rollbackComponentResp.data) {
             const componentDeployment = rollbackComponentResp.data.getComponentRollbackState;
+
+            const deploymentRequest = await client.getDeploymentRequest(componentDeployment.deploymentGuid);
 
             let artifactOverideGuid = componentDeployment.deploymentGuid;
             const artifactOverideGuidItems = componentDeployment.provider.config.filter((item: any) => item.name === 'artifactOverideGuid');

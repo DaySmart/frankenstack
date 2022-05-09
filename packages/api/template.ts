@@ -30,6 +30,7 @@ import { DeploymentForm } from "./generated/Entities/DeploymentForm";
 import { DeploymentRequest } from "./generated/Entities/DeploymentRequest";
 import { DeploymentUpdate } from "./generated/Entities/DeploymentUpdate";
 import { DescribeComponentQuery } from "./generated/Entities/DescribeComponentQuery";
+import { GetDeploymentRequestQuery } from "./generated/Entities/GetDEploymentRequestQuery";
 import { JobRun } from "./generated/Entities/JobRun";
 import { JobRunFinished } from "./generated/Entities/JobRunFinished";
 import { JobRunUpdate } from "./generated/Entities/JobRunUpdate";
@@ -46,6 +47,8 @@ import ComponentRollbackQueryHandler from "./generated/Observers/ComponentRollba
 import { ComponentRollbackQueryResponseHandler } from "./generated/Observers/ComponentRollbackQueryResponseHandler";
 import DescribeComponentQueryHandler from "./generated/Observers/DescribeComponentQueryHandler";
 import { DescribeComponentQueryResponseHandler } from "./generated/Observers/DescribeComponentQueryResponseHandler";
+import GetDeploymentRequestQueryHandler from "./generated/Observers/GetDeploymentRequestQueryHandler";
+import { GetDeploymentRequestQueryResponseHandler } from "./generated/Observers/GetDeploymentRequestQueryResponseHandler";
 import JobRunFinishedHandler from "./generated/Observers/JobRunFinishedHandler";
 import JobRunResponseHandler from "./generated/Observers/JobRunResponseHandler";
 import ProviderFailureHandler from "./generated/Observers/ProviderFailureHandler";
@@ -753,6 +756,36 @@ export function getTemplate(): Template {
                     ],
                   ],
                 },
+              ]
+            ),
+          },
+        ],
+      },
+      {
+        entity: GetDeploymentRequestQuery.ENTITY_NAME,
+        type: GetDeploymentRequestQuery.TYPE,
+        observers: [
+          {
+            module: "AppSyncRequestObserverModule",
+            operation: "getDeploymentRequest",
+            cell: new AppSyncRequestObserverModuleInstance(
+              GetDeploymentRequestQueryHandler
+            ),
+          },
+        ],
+        actorCellsThatCareAboutMe: [
+          {
+            name: "GetDeploymentRequestResponseActor",
+            module: APPSYNC_REQUEST_RESPONSE_ACTOR_MODULE,
+            cell: new AppSyncRequestResponseActorModuleInstance(
+              "GetDeploymentRequestResponseActor",
+              GetDeploymentRequestQueryResponseHandler,
+              [
+                {
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_ENTITYID,
+                  filterValues: [DeploymentRequest.ENTITY_NAME, DeploymentRequest.TYPE],
+                }
               ]
             ),
           },

@@ -43,3 +43,30 @@ export const describeComponentFull = `query DescribeComponent($env: String!, $co
     }
   }
   `;
+
+export const getDeploymentRequestFull = `query GetDeploymentRequest($deploymentGuid: ID!) {
+  getDeploymentRequest(deploymentGuid: $deploymentGuid) {
+    components {
+      name
+      inputs {
+        name
+        value
+      }
+      outputs {
+        name
+        value
+      }
+      provider {
+        name
+        config {
+          name
+          value
+        }
+      }
+    }
+    env
+    user
+    policyNames
+  }
+}
+`;

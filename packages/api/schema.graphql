@@ -46,6 +46,10 @@ type Query {
     componentName: String!
   ): ComponentDeployment
 
+  getDeploymentRequest(
+    deploymentGuid: ID!
+  ): DeploymentRequest
+
   getResolvedInputs(
     env: String!
     component: InputComponent!
@@ -75,6 +79,13 @@ type ComponentDeployment {
   outputs: [KeyValue]
 }
 
+type DeploymentRequest {
+  env: String!
+  user: String
+  policyNames: [String]
+  components: [RequestedComponent]!
+}
+
 type Provider {
   name: String!
   config: [KeyValue]
@@ -83,6 +94,13 @@ type Provider {
 type KeyValue {
   name: String!
   value: String!
+}
+
+type RequestedComponent {
+  name: String!
+  provider: Provider!
+  inputs: [KeyValue] 
+  outputs: [KeyValue]
 }
 
 input Template {
