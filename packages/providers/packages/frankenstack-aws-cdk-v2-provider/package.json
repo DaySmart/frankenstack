@@ -16,11 +16,14 @@
     "@aws-cdk/region-info": "^2.20.0",
     "@jsii/check-node": "1.55.1",
     "archiver": "^5.3.0",
+    "aws-sdk": "^2.1116.0",
     "camelcase": "^6.3.0",
     "cdk-assets": "^2.20.0",
-    "chokidar": "^3.5.3",
     "chalk": "^4",
+    "chokidar": "^3.5.3",
     "decamelize": "^5.0.1",
+    "frankenstack-aws-credentials-provider": "file:../aws-credentials/frankenstack-aws-credentials-provider-1.0.0.tgz",
+    "frankenstack-base-provider": "0.0.1",
     "fs-extra": "^9.1.0",
     "glob": "^7.2.0",
     "json-diff": "^0.7.3",
@@ -34,9 +37,7 @@
     "uuid": "^8.3.2",
     "wrap-ansi": "^7.0.0",
     "yaml": "1.10.2",
-    "yargs": "^16.2.0",
-    "aws-sdk": "^2.1116.0",
-    "frankenstack-base-provider": "0.0.1"
+    "yargs": "^16.2.0"
   },
   "devDependencies": {
     "@types/node": "^17.0.25",
