@@ -170,7 +170,7 @@ export default class Deployer {
                             })
                         ]
                     },
-                    inputs: componentDeployment.inputs ? componentDeployment.inputs.map((input: any) => {
+                    inputs: (deploymentRequest.data && deploymentRequest.data.getDeploymentRequest.components[0].inputs) ? deploymentRequest.data.getDeploymentRequest.components[0].inputs.map((input: any) => {
                         return {
                             name: input.name,
                             value: input.value
