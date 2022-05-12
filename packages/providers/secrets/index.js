@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SecretProvider = void 0;
+const iam = require("@aws-cdk/aws-iam");
+const frankenstack_base_provider_1 = require("@daysmart/frankenstack-base-provider");
+class SecretProvider extends frankenstack_base_provider_1.ProviderStack {
+    constructor(scope, id, props) {
+        super(scope, id, props);
+        this.lambda.addToRolePolicy(new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ['ssm:PutParameter'],
+            resources: ['*']
+        }));
+    }
+}
+exports.SecretProvider = SecretProvider;
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXguanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyJpbmRleC50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7QUFDQSx3Q0FBd0M7QUFDeEMscUZBQW9GO0FBRXBGLE1BQWEsY0FBZSxTQUFRLDBDQUFhO0lBQzdDLFlBQVksS0FBb0IsRUFBRSxFQUFVLEVBQUUsS0FBb0I7UUFDOUQsS0FBSyxDQUFDLEtBQUssRUFBRSxFQUFFLEVBQUUsS0FBSyxDQUFDLENBQUM7UUFFeEIsSUFBSSxDQUFDLE1BQU0sQ0FBQyxlQUFlLENBQUMsSUFBSSxHQUFHLENBQUMsZUFBZSxDQUFDO1lBQ2hELE1BQU0sRUFBRSxHQUFHLENBQUMsTUFBTSxDQUFDLEtBQUs7WUFDeEIsT0FBTyxFQUFFLENBQUMsa0JBQWtCLENBQUM7WUFDN0IsU0FBUyxFQUFFLENBQUMsR0FBRyxDQUFDO1NBQ25CLENBQUMsQ0FBQyxDQUFDO0lBQ1IsQ0FBQztDQUNKO0FBVkQsd0NBVUMiLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgKiBhcyBjZGsgZnJvbSAnQGF3cy1jZGsvY29yZSc7XHJcbmltcG9ydCAqIGFzIGlhbSBmcm9tICdAYXdzLWNkay9hd3MtaWFtJztcclxuaW1wb3J0IHsgUHJvdmlkZXJQcm9wcywgUHJvdmlkZXJTdGFjayB9IGZyb20gJ0BkYXlzbWFydC9mcmFua2Vuc3RhY2stYmFzZS1wcm92aWRlcic7XHJcblxyXG5leHBvcnQgY2xhc3MgU2VjcmV0UHJvdmlkZXIgZXh0ZW5kcyBQcm92aWRlclN0YWNrIHtcclxuICAgIGNvbnN0cnVjdG9yKHNjb3BlOiBjZGsuQ29uc3RydWN0LCBpZDogc3RyaW5nLCBwcm9wczogUHJvdmlkZXJQcm9wcykge1xyXG4gICAgICAgIHN1cGVyKHNjb3BlLCBpZCwgcHJvcHMpO1xyXG5cclxuICAgICAgICB0aGlzLmxhbWJkYS5hZGRUb1JvbGVQb2xpY3kobmV3IGlhbS5Qb2xpY3lTdGF0ZW1lbnQoe1xyXG4gICAgICAgICAgICBlZmZlY3Q6IGlhbS5FZmZlY3QuQUxMT1csXHJcbiAgICAgICAgICAgIGFjdGlvbnM6IFsnc3NtOlB1dFBhcmFtZXRlciddLFxyXG4gICAgICAgICAgICByZXNvdXJjZXM6IFsnKiddXHJcbiAgICAgICAgfSkpO1xyXG4gICAgfVxyXG59Il19

@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AppParamsProvider = void 0;
+const iam = require("@aws-cdk/aws-iam");
+const frankenstack_base_provider_1 = require("@daysmart/frankenstack-base-provider");
+class AppParamsProvider extends frankenstack_base_provider_1.ProviderStack {
+    constructor(scope, id, props) {
+        super(scope, id, props);
+        this.lambda.addToRolePolicy(new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ['ssm:PutParameter'],
+            resources: ['*']
+        }));
+    }
+}
+exports.AppParamsProvider = AppParamsProvider;
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXguanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyJpbmRleC50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7QUFDQSx3Q0FBd0M7QUFDeEMscUZBQW9GO0FBRXBGLE1BQWEsaUJBQWtCLFNBQVEsMENBQWE7SUFDaEQsWUFBWSxLQUFvQixFQUFFLEVBQVUsRUFBRSxLQUFvQjtRQUM5RCxLQUFLLENBQUMsS0FBSyxFQUFFLEVBQUUsRUFBRSxLQUFLLENBQUMsQ0FBQztRQUV4QixJQUFJLENBQUMsTUFBTSxDQUFDLGVBQWUsQ0FBQyxJQUFJLEdBQUcsQ0FBQyxlQUFlLENBQUM7WUFDaEQsTUFBTSxFQUFFLEdBQUcsQ0FBQyxNQUFNLENBQUMsS0FBSztZQUN4QixPQUFPLEVBQUUsQ0FBQyxrQkFBa0IsQ0FBQztZQUM3QixTQUFTLEVBQUUsQ0FBQyxHQUFHLENBQUM7U0FDbkIsQ0FBQyxDQUFDLENBQUM7SUFDUixDQUFDO0NBQ0o7QUFWRCw4Q0FVQyIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCAqIGFzIGNkayBmcm9tICdAYXdzLWNkay9jb3JlJztcclxuaW1wb3J0ICogYXMgaWFtIGZyb20gJ0Bhd3MtY2RrL2F3cy1pYW0nO1xyXG5pbXBvcnQgeyBQcm92aWRlclByb3BzLCBQcm92aWRlclN0YWNrIH0gZnJvbSAnQGRheXNtYXJ0L2ZyYW5rZW5zdGFjay1iYXNlLXByb3ZpZGVyJztcclxuXHJcbmV4cG9ydCBjbGFzcyBBcHBQYXJhbXNQcm92aWRlciBleHRlbmRzIFByb3ZpZGVyU3RhY2sge1xyXG4gICAgY29uc3RydWN0b3Ioc2NvcGU6IGNkay5Db25zdHJ1Y3QsIGlkOiBzdHJpbmcsIHByb3BzOiBQcm92aWRlclByb3BzKSB7XHJcbiAgICAgICAgc3VwZXIoc2NvcGUsIGlkLCBwcm9wcyk7XHJcblxyXG4gICAgICAgIHRoaXMubGFtYmRhLmFkZFRvUm9sZVBvbGljeShuZXcgaWFtLlBvbGljeVN0YXRlbWVudCh7XHJcbiAgICAgICAgICAgIGVmZmVjdDogaWFtLkVmZmVjdC5BTExPVyxcclxuICAgICAgICAgICAgYWN0aW9uczogWydzc206UHV0UGFyYW1ldGVyJ10sXHJcbiAgICAgICAgICAgIHJlc291cmNlczogWycqJ11cclxuICAgICAgICB9KSk7XHJcbiAgICB9XHJcbn0iXX0=
