@@ -217,7 +217,52 @@ ${component.outputs ? component.outputs.map((output: any) => `${output.name}: ${
     async deployTemplate(client: EnvironmentServiceAppSyncClient, template: Template) {
         await client.sendDeploymentForm(this.deploymentGuid, template);
         this.subscribeToDeploymentUpdates(client);
+        this.subscribeToJobRunRequests(client);
+        
     }
+
+    subscribeToJobRunRequests(client: EnvironmentServiceAppSyncClient) {
+        const observable = client.subscribeToJobRunRequests(this.deploymentGuid);
+
+        const subscription = observable.subscribe({
+            next: data => {
+                console.log(JSON.stringify(data, null, 2));
+                this.deployWithLocalProvider(data);
+            },
+            error: error => {
+                console.warn(error);
+            }
+        });
+    }
+
+    async deployWithLocalProvider(data: any) {
+        const jobRunRequest = data.data.subscribeToJobRunRequests;
+        console.log(jobRunRequest);
+        const { createRequireFromPath } = require('module');
+        const requireUtil = createRequireFromPath(process.cwd() + '/node_modules');
+        const providerPackage = requireUtil(jobRunRequest.component.provider.name);
+        const providerConfig = {
+            componentProvider: {
+                name: jobRunRequest.component.provider.name,
+                config: jobRunRequest.component.provider.config.map((config: any) => {
+                    return {key: config.name, value: config.value }
+                }),
+            },
+            environment: jobRunRequest.env,
+            componentName: jobRunRequest.component.name,
+            deploymentGuid: jobRunRequest.deploymentGuid,
+            jobRunGuid: jobRunRequest.jobRunGuid,
+            jobRunFinishedTopicArn: 'arn:aws:sns:us-east-1:153033334262:frankenstack-travis-job-run-finished',
+            inputs: jobRunRequest.component.inputs.map((input: any) => {
+                return {key: input.name, value: input.value}
+            }),
+            region: 'us-east-1'
+        }
+        const providerClass = Object.keys(providerPackage)[0];
+        const provider = new providerPackage[providerClass](providerConfig);
+        await provider.deploy();
+        await provider.sendResponse();
+    } 
 
     subscribeToDeploymentUpdates(client: EnvironmentServiceAppSyncClient){
         const observable = client.subscribeToDeploymentUpdate(this.deploymentGuid);

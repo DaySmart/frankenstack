@@ -24,16 +24,35 @@ type Mutation {
       statements: [Statement]!
     ): Boolean!
 
-     RemoveComponent(
-    deploymentGuid: ID!
-    env: String!
-    componentName: String!
-  ): Boolean
+    RemoveComponent(
+      deploymentGuid: ID!
+      env: String!
+      componentName: String!
+    ): Boolean
+
+    jobRunRequest(
+      deploymentGuid: ID!
+      jobRunGuid: String!
+      env: String!
+      component: InputComponent!
+    ): JobRunRequest
+
+    jobRunFinished(
+      deploymentGuid: String!
+      jobRunGuid: ID!
+      env: String!
+      componentName: String!
+      outputs: [KeyValueInput]
+      status: DeploymentResult
+    ): Boolean
 }
 
 type Subscription {
   subscribeToDeploymentUpdate(deploymentGuid: ID!): DeploymentUpdate
     @aws_subscribe(mutations: ["deploymentUpdate"])
+
+  subscribeToJobRunRequests(deploymentGuid: ID!): JobRunRequest
+    @aws_subscribe(mutations: ["jobRunRequest"])
 }
 
 type Query {
@@ -64,6 +83,20 @@ type DeploymentUpdate {
   moreInfoComponentName: String
   moreInfoType: String
   moreInfoKey: String
+}
+
+type JobRunRequest {
+  deploymentGuid: ID!
+  jobRunGuid: String!
+  env: String!
+  component: JobRunComponent!
+}
+
+type JobRunComponent {
+  name: String!
+  provider: Provider!
+  inputs: [KeyValue] 
+  outputs: [KeyValue]
 }
 
 type ComponentDeployment {
@@ -117,6 +150,12 @@ input Statement {
 enum Effect {
   Allow
   Deny
+}
+
+enum DeploymentResult {
+  Success
+  Failed
+  Deleted
 }
 
 type DeploymentStatus {

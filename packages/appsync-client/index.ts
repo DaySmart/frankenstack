@@ -1,13 +1,15 @@
-import { sendDeploymentForm, deploymentUpdate, putPolicy, putUser, removeComponent } from './src/graphql/mutations';
+import { sendDeploymentForm, deploymentUpdate, putPolicy, putUser, removeComponent, jobRunRequest } from './src/graphql/mutations';
 import gql from 'graphql-tag';
 import { subscribeToDeploymentUpdate } from './src/graphql/subscriptions';
 import { Observable } from 'apollo-client/util/Observable'
-import { DeploymentUpdateMutationVariables, InputComponent, PutPolicyMutationVariables, PutUserMutationVariables, RemoveComponentMutation, RemoveComponentMutationVariables, Template } from './src/graphql/types';
+import { DeploymentUpdateMutationVariables, InputComponent, JobRunRequestMutationVariables, PutPolicyMutationVariables, PutUserMutationVariables, RemoveComponentMutationVariables, Template } from './src/graphql/types';
 import { FetchResult } from 'apollo-link';
 import { getComponentRollbackStateFull, describeComponentFull } from './src/graphql/customQueries';
 import { getResolvedInputs } from './src/graphql/queries';
 import { AuthOptions, AUTH_TYPE } from 'aws-appsync-auth-link';
 import { AWSAppSyncClient } from 'aws-appsync'
+import { subscribeToJobRunRequestsFull } from './src/graphql/customSubscriptions';
+import { jobRunRequestFull } from './src/graphql/customMutations';
 const { AppSyncRealTimeSubscriptionHandshakeLink } = require('aws-appsync-subscription-link/lib/realtime-subscription-handshake-link');
 
 export class EnvironmentServiceAppSyncClient {
@@ -108,9 +110,25 @@ export class EnvironmentServiceAppSyncClient {
         });
     }
 
+    async requestJobRun(mutation: JobRunRequestMutationVariables): Promise<FetchResult> {
+        return await this.client.mutate({
+            mutation: gql(jobRunRequestFull),
+            variables: mutation
+        });
+    }
+
     subscribeToDeploymentUpdate(deploymentGuid: string): Observable<any> {
         return this.client.subscribe({
             query: gql(subscribeToDeploymentUpdate),
+            variables: {
+                deploymentGuid: deploymentGuid
+            }
+        });
+    }
+
+    subscribeToJobRunRequests(deploymentGuid: string): Observable<any> {
+        return this.client.subscribe({
+            query: gql(subscribeToJobRunRequestsFull),
             variables: {
                 deploymentGuid: deploymentGuid
             }

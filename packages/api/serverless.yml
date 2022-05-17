@@ -206,6 +206,11 @@ custom:
         field: deploymentUpdate
         request: mutation.deploymentUpdate.request.vtl
         response: mutation.deploymentUpdate.response.vtl
+      - dataSource: none
+        type: Mutation
+        field: jobRunRequest
+        request: mutation.jobRunRequest.request.vtl
+        response: mutation.jobRunRequest.response.vtl
   amplify:
     - filename: ../appsync-client/src/graphql
       type: graphql-typescript

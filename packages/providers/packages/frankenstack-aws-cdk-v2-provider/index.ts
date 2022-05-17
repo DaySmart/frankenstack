@@ -8,12 +8,19 @@ import { Credentials, CredentialProviderChain, SSM } from 'aws-sdk';
 import * as cxapi from '@aws-cdk/cx-api';
 import { CloudFormationDeployments } from 'aws-cdk/lib/api/cloudformation-deployments';
 import { DeployStackResult } from 'aws-cdk/lib/api/deploy-stack';
+import { AWSCredentialsProvider } from 'frankenstack-aws-credentials-provider';
 import fs = require('fs');
 
 
 export default class AWSCDKv2Provider extends BaseProvider {
     private awsAccount: any;
     private region: string = 'us-east-1';
+    private credentialsProvider: AWSCredentialsProvider;
+
+    constructor(config: any) {
+        super(config);
+        this.credentialsProvider = new AWSCredentialsProvider();
+    }
 
     async deploy() {
         const providerConfig = (this.config.componentProvider.config) ? this.config.componentProvider.config.reduce((obj: any, item: any) => {
@@ -96,7 +103,7 @@ export default class AWSCDKv2Provider extends BaseProvider {
         console.log('credentials', awsCredentials);
 
         let app = refreshApp(accountId, providerConfig.region);
-        const sdkProvider = await this.getSdkProvider(awsCredentials);
+        const sdkProvider = await this.getSdkProvider(accountId);
         console.log('sdkProvider', sdkProvider);
 
         const cloudExecutable = new CloudExecutable({
@@ -135,24 +142,13 @@ export default class AWSCDKv2Provider extends BaseProvider {
         }
     }
 
-    async getSdkProvider(paramaterName?: string): Promise<SdkProvider> {
-        console.log('getSdkProvider parameterName', paramaterName);
-        if(paramaterName) {
-            const ssm = new SSM();
-            const param = await ssm.getParameter({
-                Name: paramaterName.replace('ssm:', ''),
-                WithDecryption: true
-            }).promise();
-
-            if(param.Parameter && param.Parameter.Value) {
-                console.log('getSdkProvider paramValue', param.Parameter.Value);
-                const credentials = JSON.parse(param.Parameter.Value);
+    async getSdkProvider(accountId?: string): Promise<SdkProvider> {
+        if(accountId) {
+            const credentials = await this.credentialsProvider.generateCredentials(accountId);
+            if(credentials) {
                 const credentialProviders = [
                     () => { 
-                        return new Credentials({
-                            accessKeyId: credentials.AWS_ACCESS_KEY_ID,
-                            secretAccessKey: credentials.AWS_SECRET_ACCESS_KEY
-                        })
+                        return credentials
                     }
                 ]
     
