@@ -15,6 +15,14 @@ export const getComponentRollbackState = `query GetComponentRollbackState($env: 
   }
 }
 `;
+export const getDeploymentRequest = `query GetDeploymentRequest($deploymentGuid: ID!) {
+  getDeploymentRequest(deploymentGuid: $deploymentGuid) {
+    env
+    user
+    policyNames
+  }
+}
+`;
 export const getResolvedInputs = `query GetResolvedInputs($env: String!, $component: InputComponent!) {
   getResolvedInputs(env: $env, component: $component) {
     name

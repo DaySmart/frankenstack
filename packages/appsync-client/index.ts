@@ -4,7 +4,7 @@ import { subscribeToDeploymentUpdate } from './src/graphql/subscriptions';
 import { Observable } from 'apollo-client/util/Observable'
 import { DeploymentUpdateMutationVariables, InputComponent, PutPolicyMutationVariables, PutUserMutationVariables, RemoveComponentMutation, RemoveComponentMutationVariables, Template } from './src/graphql/types';
 import { FetchResult } from 'apollo-link';
-import { getComponentRollbackStateFull, describeComponentFull } from './src/graphql/customQueries';
+import { getComponentRollbackStateFull, describeComponentFull, getDeploymentRequestFull } from './src/graphql/customQueries';
 import { getResolvedInputs } from './src/graphql/queries';
 import { AuthOptions, AUTH_TYPE } from 'aws-appsync-auth-link';
 import { AWSAppSyncClient } from 'aws-appsync'
@@ -56,6 +56,15 @@ export class EnvironmentServiceAppSyncClient {
             variables: {
                 env: environment,
                 componentName: componentName
+            }
+        });
+    }
+
+    async getDeploymentRequest(deploymentGuid: string): Promise<FetchResult> {
+        return await this.client.query({
+            query: gql(getDeploymentRequestFull),
+            variables: {
+                deploymentGuid: deploymentGuid
             }
         });
     }

@@ -79,6 +79,37 @@ export type GetComponentRollbackStateQuery = {
   } | null,
 };
 
+export type GetDeploymentRequestQueryVariables = {
+  deploymentGuid: string,
+};
+
+export type GetDeploymentRequestQuery = {
+  getDeploymentRequest:  {
+    __typename: "DeploymentRequest",
+    env: string,
+    user: string | null,
+    policyNames: Array< string | null > | null,
+    components:  Array< {
+      __typename: "RequestedComponent",
+      name: string,
+      provider:  {
+        __typename: "Provider",
+        name: string,
+      },
+      inputs:  Array< {
+        __typename: "KeyValue",
+        name: string,
+        value: string,
+      } | null > | null,
+      outputs:  Array< {
+        __typename: "KeyValue",
+        name: string,
+        value: string,
+      } | null > | null,
+    } | null >,
+  } | null,
+};
+
 export type GetResolvedInputsQueryVariables = {
   env: string,
   component: InputComponent,

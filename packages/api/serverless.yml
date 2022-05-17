@@ -386,6 +386,15 @@ resources:
         FieldName: getResolvedInputs
         DataSourceName:
           Fn::GetAtt: [GraphQlDsGraphqlRequestObserver, Name]
+    GetDeploymentRequestQueryRequestObserverResolver:
+      Type: "AWS::AppSync::Resolver"
+      Properties:
+        ApiId:
+          Fn::GetAtt: [GraphQlApi, ApiId]
+        TypeName: Query
+        FieldName: getDeploymentRequest
+        DataSourceName:
+          Fn::GetAtt: [GraphQlDsGraphqlRequestObserver, Name]
     AppSyncLoggingServiceRole:
       Type: "AWS::IAM::Role"
       Properties:
