@@ -15,6 +15,12 @@ import fs = require('fs');
 export default class AWSCDKv2Provider extends BaseProvider {
     private awsAccount: any;
     private region: string = 'us-east-1';
+    private credentialsProvider: AWSCredentialsProvider;
+
+    constructor(config: any) {
+        super(config);
+        this.credentialsProvider = new AWSCredentialsProvider();
+    }
 
     async deploy() {
         const providerConfig = (this.config.componentProvider.config) ? this.config.componentProvider.config.reduce((obj: any, item: any) => {
@@ -138,8 +144,7 @@ export default class AWSCDKv2Provider extends BaseProvider {
 
     async getSdkProvider(accountId?: string): Promise<SdkProvider> {
         if(accountId) {
-            const credentialsProvider = new AWSCredentialsProvider();
-            const credentials = await credentialsProvider.generateCredentials(accountId);
+            const credentials = await this.credentialsProvider.generateCredentials(accountId);
             if(credentials) {
                 const credentialProviders = [
                     () => { 

@@ -12,7 +12,11 @@ const prompts = require('prompts');
 const oidcClient = new SSOOIDCClient({region: 'us-west-2'});
 const ssoClient = new SSOClient({region: 'us-west-2'});
 
-export class AWSCredentialsProvider {
+export interface FrankenstackCredentialsProvider {
+    generateCredentials(account: string): Promise<any>;
+}
+
+export class AWSCredentialsProvider implements FrankenstackCredentialsProvider {
     constructor() {}
 
     async getToken(clientId: string, clientSecret: string, deviceCode: string) {
