@@ -91,6 +91,7 @@ export default async function JobRunActor(
           componentInputs: JSON.stringify(data.Inputs),
           componentName: data.Name,
           componentProvider: JSON.stringify(data.Provider),
+          componentProviderName: data.Provider.Name,
           deploymentGuid: data.DeploymentGuid,
           buildDir: buildDir ? buildDir : undefined,
           nodejsVersion: nodejsVersion ? nodejsVersion : undefined,
