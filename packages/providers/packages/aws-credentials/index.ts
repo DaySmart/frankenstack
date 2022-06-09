@@ -1,6 +1,7 @@
 import { SSOOIDCClient, RegisterClientCommand, StartDeviceAuthorizationCommand, CreateTokenCommand, AuthorizationPendingException } from '@aws-sdk/client-sso-oidc';
 import { SSOClient, ListAccountRolesCommand, GetRoleCredentialsCommand } from '@aws-sdk/client-sso';
 import { Credentials } from 'aws-sdk';
+import { BaseProvider } from 'frankenstack-base-provider';
 const fs = require('fs');
 const open = require('open');
 const os = require('os');
@@ -16,8 +17,22 @@ export interface FrankenstackCredentialsProvider {
     generateCredentials(account: string): Promise<any>;
 }
 
-export class AWSCredentialsProvider implements FrankenstackCredentialsProvider {
-    constructor() {}
+export class AWSCredentialsProvider extends BaseProvider implements FrankenstackCredentialsProvider {
+    constructor(config: any) {
+        super(config);
+    }
+
+    async deploy(): Promise<void> {
+        if(this.config.componentProvider.account && this.config.componentProvider.account.accountId) {
+            const credentials = await this.generateCredentials(this.config.componentProvider.account.accountId);
+            this.outputs = [
+                {Key: 'accessKeyId', Value: credentials.accessKeyId},
+                {Key: 'secretAccessKey', Value: credentials.secretAccessKey},
+                {Key: 'sessionToken', Value: credentials.sessionToken}
+            ]
+            this.result = true;
+        }
+    }
 
     async getToken(clientId: string, clientSecret: string, deviceCode: string) {
         const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
@@ -147,7 +162,11 @@ export class AWSCredentialsProvider implements FrankenstackCredentialsProvider {
                     nextToken = accountRolesListPageResp.nextToken;
                 }
             }
-    
+            
+            if(roleList.length === 1) {
+                return roleList[0];
+            }
+
             const rolePromptList = new promptList({
                 name: 'role',
                 message: `What role would you like to assume for account ${accountId}?`,

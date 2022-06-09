@@ -8,9 +8,13 @@ const flatten = require('flat');
 const archiver = require('archiver');
 const stream = require('stream');
 import { defaultProvider } from '@aws-sdk/credential-provider-node';
+import { Credentials } from '@aws-sdk/types'
 import { S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
-import { resolveComponents, resolveInputVariables } from './utils/variables';
+import { STS, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
+import { parse as parseArn } from '@aws-sdk/util-arn-parser';
+import { isReference, parseReference, resolveComponents, resolveInputVariables } from './utils/variables';
+import { AWSCredentialsProvider } from 'frankenstack-aws-credentials-provider';
 
 
 interface CustomNodeJsGlobal extends NodeJS.Global {
@@ -48,6 +52,7 @@ export default class Deployer {
     public config: any;
     public client: any;
     public params: any;
+    public userName: string | undefined;
 
     constructor(command: any, file: string, config?: any) {
         this.file = file;
@@ -65,7 +70,14 @@ export default class Deployer {
     }
 
     async run() {
-        const creds = await defaultProvider({profile: this.config.profile})();
+        let creds: Credentials;
+        if(this.config.profile) {
+           creds = await defaultProvider({profile: this.config.profile})();
+        } else {
+            const awsCredentialsProvider = new AWSCredentialsProvider({});
+            creds = await awsCredentialsProvider.generateCredentials('xxxxxxxxxxxxxx');
+        }
+        this.userName = await this.getUsername(creds);
         AWS.config.credentials = creds;
         const awsconfig = await ssmConfig(creds, this.config.stageOveride);
         const client = new EnvironmentServiceAppSyncClient(
@@ -213,6 +225,49 @@ ${component.outputs ? component.outputs.map((output: any) => `${output.name}: ${
             console.error(`Could not find component!`)
         }
     }
+    
+    // Currently only supports AWS
+    async addCredentialsComponentsToTemplate(template: Template) {
+        for(var i = 0; i++; i < template.components.length) {
+            if(template.components[i].provider.config) {
+                const credentials = template.components[i].provider.config?.find(item => item.key === 'credentials');
+                const account = template.components[i].provider.config?.find(item => item.key === 'account');
+                if(credentials && isReference(credentials.value) && account && !isReference(account.value)) {
+                    const parsedCredentialsRef = parseReference(credentials.value);
+                    if(parsedCredentialsRef.env === 'credentials') {
+                        switch(parsedCredentialsRef.componentName) {
+                            case 'aws':
+                                // Credentials value format ${credentials:aws} or ${credentials:aws:sso} or ${credentials:aws:profile=dev} or ${credentials:aws:role=my-role}
+                                const credentialsComponentName = `aws-credentials/${account.value}/${this.userName}`
+                                template.components.push({
+                                    name: credentialsComponentName,
+                                    provider: {
+                                        name: 'frankenstack-aws-credentials-provider',
+                                        config: [
+                                            {key: 'secret', value: 'true'}
+                                        ]
+                                    },
+                                    inputs: [{key: 'accountId', value: account.value}]
+                                });
+                                const credentialsIndex = template.components[i].provider.config?.findIndex(config => config.key === 'credentials');
+                                if(credentialsIndex) {
+                                    // @ts-ignore
+                                    template.components[0].provider.config[credentialsIndex].value = `\${${template.env}:${credentialsComponentName}}`;
+                                }
+                                break;
+                            default:
+                                console.log(`The credentials provider for ${parsedCredentialsRef.componentName} is not implemented`)
+                                break;
+
+                        }
+                        
+                    }
+                    
+                    
+                }
+            }
+        }
+    }
 
     async deployTemplate(client: EnvironmentServiceAppSyncClient, template: Template) {
         await client.sendDeploymentForm(this.deploymentGuid, template);
@@ -252,7 +307,7 @@ ${component.outputs ? component.outputs.map((output: any) => `${output.name}: ${
             componentName: jobRunRequest.component.name,
             deploymentGuid: jobRunRequest.deploymentGuid,
             jobRunGuid: jobRunRequest.jobRunGuid,
-            jobRunFinishedTopicArn: 'arn:aws:sns:us-east-1:153033334262:frankenstack-travis-job-run-finished',
+            jobRunFinishedTopicArn: 'arn:aws:sns:us-east-1:xxxxxxxxx:frankenstack-travis-job-run-finished',
             inputs: jobRunRequest.component.inputs.map((input: any) => {
                 return {key: input.name, value: input.value}
             }),
@@ -352,5 +407,17 @@ ${component.outputs ? component.outputs.map((output: any) => `${output.name}: ${
             delete template.templates;
         }
         return template;
+    }
+
+    async getUsername(credentials: Credentials): Promise<string | undefined> {
+        const stsClient = new STS({credentials: credentials});
+        const getCallerCommand = new GetCallerIdentityCommand({});
+        const getCallerCommandOutput = await stsClient.send(getCallerCommand);
+        if(getCallerCommandOutput.Arn) {
+            const frankAWSUserArn = getCallerCommandOutput.Arn;
+            const frankAWSUserResource = parseArn(frankAWSUserArn).resource;
+            const userName = frankAWSUserResource.split('/')[-1]
+            return userName;
+        }
     }
 }

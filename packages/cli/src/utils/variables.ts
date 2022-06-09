@@ -41,6 +41,20 @@ export function resolveInputVariables(rawValue: string, template: any, params: a
     return rawValue;
 }
 
+export function parseReference(value: string): {env: string, componentName: string, output?: string } {
+    const variablePattern = new RegExp(/(\$\{([^${}]*?)\})+/);
+    const match = variablePattern.exec(value);
+    if(match) {
+        const refArray = match[1].split(':');
+        return {
+            env: refArray[0],
+            componentName: refArray[1],
+            output: refArray[2] ? refArray[2] : undefined
+        }
+    }
+    throw `Could not parse refererence ${value}`;
+}
+
 function resolveReference(reference: string, template: any, params: any): string {
     let type = reference.split(':')[0];
     let resolvedRef = reference;
@@ -66,4 +80,10 @@ function resolveReference(reference: string, template: any, params: any): string
             break;
     }
     return resolvedRef;
+}
+
+export function isReference(value: string): boolean {
+    const variablePattern = new RegExp(/(\$\{([^${}]*?)\})+/);
+    let match = variablePattern.exec(value);
+    return match ? true : false;
 }

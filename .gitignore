@@ -12,3 +12,5 @@ dist
 
 infrastructure
 .deployer
+
+*.tgz

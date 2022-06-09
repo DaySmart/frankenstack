@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@daysmart/frankenstack-appsync-client": "^1.7.0",
     "aws-sdk": "^2.1115.0"
   },
   "devDependencies": {
