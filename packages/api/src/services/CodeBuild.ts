@@ -21,9 +21,10 @@ export module CodeBuildClient {
     export async function triggerCodeBuild(params: CodeBuildTriggerParams, log: any): Promise<CodeBuild.StartBuildOutput> {
         try {
             const artifactGuid = params.artifactOverideGuid ? params.artifactOverideGuid : params.deploymentGuid;
+            const nodejsVersion = params.componentProvider === 'cdk' ? 14 : params.nodejsVersion
             let codeBuildParams: CodeBuild.StartBuildInput = {
                 projectName: process.env.CODE_BUILD_PROJECT as string,
-                buildspecOverride: generateBuildSpec(params.buildDir, params.nodejsVersion),
+                buildspecOverride: generateBuildSpec(params.buildDir, nodejsVersion),
                 sourceLocationOverride: `${S3_BUCKET}/${artifactGuid}.zip`,
                 privilegedModeOverride: true,
                 environmentVariablesOverride: [
@@ -45,7 +46,7 @@ export module CodeBuildClient {
                     }
                 }
             }
-            if (params.nodejsVersion === 14)
+            if (params.nodejsVersion === 14 || params.componentProvider === 'cdk')
               codeBuildParams.imageOverride = 'aws/codebuild/standard:5.0';
 
 
