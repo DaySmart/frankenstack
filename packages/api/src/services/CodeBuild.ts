@@ -10,6 +10,7 @@ export interface CodeBuildTriggerParams {
   componentName: string;
   componentEnvironment: string;
   componentProvider: string;
+  componentProviderName: string;
   componentInputs?: string;
   buildDir?: string;
   artifactOverideGuid?: string;
@@ -21,7 +22,7 @@ export module CodeBuildClient {
     export async function triggerCodeBuild(params: CodeBuildTriggerParams, log: any): Promise<CodeBuild.StartBuildOutput> {
         try {
             const artifactGuid = params.artifactOverideGuid ? params.artifactOverideGuid : params.deploymentGuid;
-            const nodejsVersion = params.componentProvider === 'cdk' ? 14 : params.nodejsVersion
+            const nodejsVersion = params.componentProviderName === 'cdk' ? 14 : params.nodejsVersion
             let codeBuildParams: CodeBuild.StartBuildInput = {
                 projectName: process.env.CODE_BUILD_PROJECT as string,
                 buildspecOverride: generateBuildSpec(params.buildDir, nodejsVersion),
@@ -46,7 +47,7 @@ export module CodeBuildClient {
                     }
                 }
             }
-            if (params.nodejsVersion === 14 || params.componentProvider === 'cdk')
+            if (nodejsVersion === 14)
               codeBuildParams.imageOverride = 'aws/codebuild/standard:5.0';
 
 
