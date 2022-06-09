@@ -1,5 +1,5 @@
 import { createExistingObservation, generateTraceId, Observation2 } from "o18k-ts-aws";
-import { GetDeploymentRequestQuery } from '../Entities/GetDEploymentRequestQuery';
+import { GetDeploymentRequestQuery } from '../Entities/GetDeploymentRequestQuery';
 import { IEntityObservation } from "../Entities/IEntityObservation";
 
 export default function(event, _context): Observation2<IEntityObservation>[] {

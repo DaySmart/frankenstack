@@ -30,7 +30,7 @@ import { DeploymentForm } from "./generated/Entities/DeploymentForm";
 import { DeploymentRequest } from "./generated/Entities/DeploymentRequest";
 import { DeploymentUpdate } from "./generated/Entities/DeploymentUpdate";
 import { DescribeComponentQuery } from "./generated/Entities/DescribeComponentQuery";
-import { GetDeploymentRequestQuery } from "./generated/Entities/GetDEploymentRequestQuery";
+import { GetDeploymentRequestQuery } from "./generated/Entities/GetDeploymentRequestQuery";
 import { JobRun } from "./generated/Entities/JobRun";
 import { JobRunFinished } from "./generated/Entities/JobRunFinished";
 import { JobRunUpdate } from "./generated/Entities/JobRunUpdate";
