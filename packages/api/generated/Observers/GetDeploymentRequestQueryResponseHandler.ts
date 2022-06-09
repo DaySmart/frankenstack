@@ -1,6 +1,6 @@
 import { Context, IEntityObservation, Observation2 } from "o18k-ts-aws";
 import { DeploymentRequest } from "../Entities/DeploymentRequest";
-import { GetDeploymentRequestQuery } from "../Entities/GetDEploymentRequestQuery";
+import { GetDeploymentRequestQuery } from "../Entities/GetDeploymentRequestQuery";
 
 export function GetDeploymentRequestQueryResponseHandler(
   _observation: Observation2<GetDeploymentRequestQuery.EntityObservation>,
