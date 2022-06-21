@@ -359,4 +359,96 @@ describe('DeploymentDecider ComponentHandler', () => {
             ])
         )
     });
+
+    it('Provider config is resolved from component', () => {
+        const deploymentGuid = 'abcdefg';
+
+        const dependentDeployment: Deployment.DataSchema = {
+            DeploymentGuid: deploymentGuid,
+            Env: 'myenv',
+            Status: 'DEPLOY_IN_PROGRESS',
+            User: 'jenkins',
+            Start: new Date().toISOString(),
+            Components: [
+                {
+                    Name: 'comp1',
+                    Provider: {Name: 'hardcoded'},
+                    Status: 'ACCEPTED',
+                    Inputs: [{Key: 'MY_INPUT', Value: 'SECRET'}]
+                },
+                {
+                    Name: 'comp2',
+                    Provider: { 
+                        Name: 'hardcoded',
+                        Config: [
+                            { Key: 'account', Value: '${myenv:comp1}' }
+                        ]
+                    },
+                    Status: 'WAITING_ON_DEPENDENT_DEPLOYMENT',
+                    Inputs: [{Key: 'foo', Value: 'bar'}]
+                }
+            ]
+        }
+
+        const dependentDeploymentObservation = createNewObservation(
+            Deployment.EntityObservation,
+            dependentDeployment,
+            generateTraceId()
+        );
+
+        const component: Component.DataSchema = {
+            DeploymentGuid: deploymentGuid,
+            Env: 'myenv',
+            Name: 'comp1',
+            Status: 'DEPLOYED',
+            Outputs: [{
+                Key: 'MY_INPUT',
+                Value: 'SECRET'
+            }],
+            Create: new Date().toISOString(),
+            Update: new Date().toISOString()
+        }
+
+        const componentObservation = createNewObservation(
+            Component.EntityObservation,
+            component,
+            generateTraceId()
+        );
+
+        const resp = handler(
+            componentObservation,
+            [[dependentDeploymentObservation]],
+            {time: new Date()}
+        );
+
+        console.log(JSON.stringify(resp, null, 2))
+        
+        expect(resp[0].entity).toEqual(Deployment.ENTITY_NAME);
+        expect(resp[0].data.Status).toEqual('DEPLOY_IN_PROGRESS');
+        expect(resp[0].data.Components).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    Name: 'comp1',
+                    Status: 'DEPLOYED'
+                })
+            ])
+        );
+        
+        expect(resp[0].data.Components).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    Name: 'comp2',
+                    Status: 'ACCEPTED',
+                    Inputs: [{Key: 'foo', Value: 'bar'}],
+                    Provider: {
+                        Name: 'hardcoded',
+                        Config: [{
+                            Key: 'account',
+                            Value: '{"MY_INPUT":"SECRET"}'
+                        }]
+                    }
+                })
+            ])
+        )
+    })
 });

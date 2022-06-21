@@ -18,6 +18,12 @@ export function getComponentLookup(observation: Observation2<IEntityObservation>
                     componentNames = matchInput(input, componentNames);
                 }
             }
+
+            if(component.Provider.Config) {
+                for(var config of component.Provider.Config) {
+                    componentNames = matchInput(config, componentNames);
+                }
+            }
         }
     } else if (observation.entity === ResolvedInputsQuery.ENTITY_NAME) {
         console.log('getComponentLookup is ResolvedInputQuery');
@@ -185,10 +191,9 @@ export function resolveReferenceFromComponentObservation(
             let match = input.Value.match(LOOKUP_PATTERN);
             if(match) {
                 let inputValueSplit = match[1].split(':');
-
                 let componentEnv = inputValueSplit[0];
                 let componentName = inputValueSplit[1];
-                let variableName = inputValueSplit[2];
+                let variableName = inputValueSplit.length > 2 ? inputValueSplit[2] : undefined;
 
                 if(componentEnv === observation.data.Env && componentName === observation.data.Name) {
                     const output = observation.data.Outputs?.find(out => out.Key === variableName);
@@ -210,10 +215,106 @@ export function resolveReferenceFromComponentObservation(
     return resolvedInputs;
 }
 
+export function resolveProviderConfigReferencesFromComponentObservation(
+    observation: Observation2<Component.EntityObservation>,
+    component: Deployment.Component
+): Array<{Key: string, Value: string, FailedLookupStatus?: Deployment.ComponentDeploymentStatus, FailedLookupMessage?: string}> {
+    let resolvedProviderConfig = (component.Provider.Config ? component.Provider.Config : []) as
+        Array<{Key: string, Value: string, FailedLookupStatus?: Deployment.ComponentDeploymentStatus, FailedLookupMessage?: string}>;
+
+    if(resolvedProviderConfig) {
+        for(var j = 0; j < resolvedProviderConfig.length; j++) {
+            let input = resolvedProviderConfig[j];
+            let match = input.Value.match(LOOKUP_PATTERN);
+            if(match) {
+                let inputValueSplit = match[1].split(':');
+
+                let componentEnv = inputValueSplit[0];
+                let componentName = inputValueSplit[1];
+                let variableName = inputValueSplit.length > 2 ? inputValueSplit[2] : undefined;
+
+                if(componentEnv === observation.data.Env && componentName === observation.data.Name) {
+                    let output;
+                    if(variableName) {
+                        output = observation.data.Outputs?.find(out => out.Key === variableName);
+                    } else if(observation.data.Outputs) {
+                        output = JSON.stringify(observation.data.Outputs.reduce((obj: any, item: any) => {
+                            return {
+                                ...obj,
+                                [item.Key]: item.Value
+                            }
+                        }, {}));
+                    }
+                    
+                    if(output && output.Value) {
+                        resolvedProviderConfig[j].Value = output.Value;
+                    } else if(output) {
+                        resolvedProviderConfig[j].Value = output;
+                    } else if (observation.data.Status === 'DELETED') { 
+                        resolvedProviderConfig[j].FailedLookupStatus = 'DEPLOYMENT_FAILED';
+                        resolvedProviderConfig[j].FailedLookupMessage = `Dependent component ${componentName} is in deleted state`;
+                    } else if(variableName) {
+                        resolvedProviderConfig[j].FailedLookupStatus = 'DEPLOYMENT_FAILED';
+                        resolvedProviderConfig[j].FailedLookupMessage = `Dependent component ${componentName} was missing output value for ${variableName}`;
+                    } else {
+                        resolvedProviderConfig[j].FailedLookupStatus = 'DEPLOYMENT_FAILED';
+                        resolvedProviderConfig[j].FailedLookupMessage = `Dependent component ${componentName} is missing outputs`;
+                    }
+                } else {
+                    resolvedProviderConfig[j].FailedLookupStatus = 'WAITING_ON_DEPENDENT_DEPLOYMENT';
+                }
+            }
+        }
+    }
+    return resolvedProviderConfig;
+}
+
+export function resolveProviderConfigForDeploymentRequest(
+    observation: Observation2<DeploymentRequest.EntityObservation>,
+    component: DeploymentRequest.Component,
+    dependentComponentObservations: Observation2<Component.EntityObservation>[]
+): Array<{Key: string, Value: string, FailedLookupStatus?: Deployment.ComponentDeploymentStatus, FailedLookupMessage?: string}> {
+    let resolvedProviderConfig = (component.Provider.Config ? component.Provider.Config : []) as
+        Array<{Key: string, Value: string, FailedLookupStatus?: Deployment.ComponentDeploymentStatus, FailedLookupMessage?: string}>;
+
+    const componentsInTemplate = observation.data.Components.map(component => component.Name);
+    if(resolvedProviderConfig) {
+        for(var j = 0; j < resolvedProviderConfig.length; j++) {
+            let input = resolvedProviderConfig[j];
+            let match = input.Value.match(LOOKUP_PATTERN);
+            if(match) {
+                let inputValueSplit = match[1].split(':');
+
+                let componentEnv = inputValueSplit[0];
+                let componentName = inputValueSplit[1];
+                let variableName = inputValueSplit[2];
+
+                if(componentEnv === observation.data.Env && componentsInTemplate.includes(componentName)) {
+                    resolvedProviderConfig[j].FailedLookupStatus = "WAITING_ON_DEPENDENT_DEPLOYMENT";
+                    resolvedProviderConfig[j].FailedLookupMessage = `Dependency found on component in template: ${componentEnv}:${componentName}`
+                } else {
+                    try {
+                        resolvedProviderConfig[j].Value = lookupComponentOutput(
+                            componentEnv,
+                            componentName,
+                            variableName,
+                            dependentComponentObservations
+                        )
+                    } catch(err: any) {
+                        resolvedProviderConfig[j].FailedLookupStatus = 'DEPLOYMENT_FAILED';
+                        resolvedProviderConfig[j].FailedLookupMessage = err.message;
+                    }
+                }
+            }
+        }
+    }
+    return resolvedProviderConfig;
+}
+
 function lookupComponentOutput(
     componentEnv: string,
     componentName: string,
-    variableName: string,
+    variableName: string | undefined,
     dependentComponents: Observation2<Component.EntityObservation>[]
 ): string {
     console.log('lookupComponentOutput args', componentEnv, componentName, variableName, dependentComponents);
@@ -221,12 +322,22 @@ function lookupComponentOutput(
         if(dependentComponent.entityid === `${componentEnv}:${componentName}`) {
             console.log('lookupComponentOutput componentFound', componentName, dependentComponent);
             if(dependentComponent.data.Outputs) {
-                for(var output of dependentComponent.data.Outputs) {
-                    if(output.Key === variableName) {
-                        console.log('lookupComponentOutput return', componentName, variableName, output)
-                        return  output.Value;
+                if(variableName) {
+                    for(var output of dependentComponent.data.Outputs) {
+                        if(output.Key === variableName) {
+                            console.log('lookupComponentOutput return', componentName, variableName, output)
+                            return  output.Value;
+                        }
                     }
+                } else {
+                    return JSON.stringify(dependentComponent.data.Outputs.reduce((obj: any, item: any) => {
+                        return {
+                            ...obj,
+                            [item.Key]: item.Value
+                        }
+                    }, {}))
                 }
+                
             }
             throw new OutputNotFoundError(dependentComponent, variableName);
         }
@@ -235,11 +346,15 @@ function lookupComponentOutput(
 }
 
 export class OutputNotFoundError extends Error {
-    constructor(component: Observation2<Component.EntityObservation>, varName: string, ...params) {
+    constructor(component: Observation2<Component.EntityObservation>, varName: string | undefined, ...params) {
         super(...params);
 
         this.name = "OutputNotFoundError";
-        this.message = `Failed to find output (${varName}) for component ${component.data.Env}:${component.data.Name}`;
+        if(varName) {
+            this.message = `Failed to find output (${varName}) for component ${component.data.Env}:${component.data.Name}`;
+        } else {
+            this.message = `Failed to find outputs for component ${component.data.Env}:${component.data.Name}`
+        }
     }
 }
 

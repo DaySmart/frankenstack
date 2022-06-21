@@ -469,4 +469,66 @@ describe('DeploymentDecider DeploymentRequestHandler', () => {
             "jenkins is not authorized to perform deploy:write on myenv:comp1"
         ])
     });
+
+    it('provider config is resolved from external component', () => {
+        const dependentComponent: Component.DataSchema = {
+            DeploymentGuid: 'xyzabc',
+            Env: 'myenv',
+            Name: 'externalcomp',
+            Create: new Date().toISOString(),
+            Update: new Date().toISOString(),
+            Status: 'DEPLOYED',
+            Outputs: [{
+                Key: 'MY_VAR',
+                Value: 'MY_VALUE'
+            }]
+        }
+
+        const dependentComponentObservation = createNewObservation(
+            Component.EntityObservation,
+            dependentComponent,
+            generateTraceId()
+        );
+
+        const deployment: DeploymentRequest.DataSchema = {
+            Env: 'myenv',
+            DeploymentGuid: 'abcdefg',
+            User: 'jenkins',
+            PolicyNames: ['test'],
+            Components: [{
+                Name: 'comp1',
+                Provider: {
+                    Name: 'hardcoded',
+                    Config: [
+                        {Key: 'account', Value: '${myenv:externalcomp}'}
+                    ]
+                },
+                Inputs: [
+                    {Key: 'foo', Value: 'bar'}
+                ]
+            }]
+        }
+
+        const deploymentObservation = createNewObservation(
+            DeploymentRequest.EntityObservation,
+            deployment,
+            generateTraceId()
+        )
+
+        const resp = handler(
+            deploymentObservation,
+            [
+                [], // Deployment
+                [], // ComponentDeployments
+                [dependentComponentObservation],
+                [openPolicyObservation]
+            ],
+            {time: new Date()}
+        );
+
+        expect(resp[0].entity).toEqual(Deployment.ENTITY_NAME);
+        expect(resp[0].data.Status).toEqual('DEPLOY_IN_PROGRESS');
+        expect(resp[0].data.Components[0].Status).toEqual('ACCEPTED');
+        expect(resp[0].data.Components[0].Provider.Config).toEqual(expect.arrayContaining([{Key: 'account', Value: '{"MY_VAR":"MY_VALUE"}'}]));
+    })
 });

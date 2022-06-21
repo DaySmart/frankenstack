@@ -20,7 +20,7 @@ export namespace ComponentDeployment {
 
     export interface Provider {
         Name: string;
-        Compute?: 'LAMBDA' | 'CODE_BUILD';
+        Compute?: 'LAMBDA' | 'CODE_BUILD' | 'CALLING_CLIENT';
         ResourceArn?: string;
         Account?: Account;
         Config?: Array<{Key: string, Value: string}>;

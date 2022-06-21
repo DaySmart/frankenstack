@@ -52,11 +52,39 @@ export default function ComponentDeploymentDecider_DeploymentHandler(
             errorMessage = err;
           }
         }
+
+        let credentials = component.Provider.Config.find(config => config.Key === 'credentials');
+        if(credentials && account) {
+          provider.Account = {
+            accountId: account.Value,
+            credentials: credentials.Value
+          }
+        }
       }
 
       if (resolvedProvider) {
         provider.Compute = resolvedProvider.Compute;
         provider.ResourceArn = resolvedProvider.ResourceArn;
+      } else {
+        if(['serverless-framework', 'cdk', 'hardcoded'].includes(provider.Name)) {
+          provider.Compute = 'CODE_BUILD'
+        } else {
+          if(component.Provider.Config) {
+            const compute = component.Provider.Config.find(config => config.Key === 'compute');
+            if(compute) {
+              switch(compute.Value) {
+                case 'CODE_BUILD':
+                case 'codebuild':
+                case 'remote':
+                  provider.Compute = 'CODE_BUILD';
+                  break;
+                default:
+                  provider.Compute = 'CALLING_CLIENT';
+              }
+            }
+          }
+          provider.Compute = 'CALLING_CLIENT';
+        }
       }
 
       const componentDeployment: ComponentDeployment.DataSchema = {

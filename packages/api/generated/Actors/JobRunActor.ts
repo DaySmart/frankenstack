@@ -1,6 +1,6 @@
 import { Context, IEntityObservation } from "o18k-ts-aws";
 import { v4 as uuidv4 } from "uuid";
-// import { CodeBuildClient } from "../../src/services/CodeBuild";
+import { CodeBuildClient } from "../../src/services/CodeBuild";
 import { EnvironmentServiceAppSyncClient } from '@daysmart/frankenstack-appsync-client';
 import AWS from "aws-sdk";
 import { ComponentDeployment } from "../Entities/ComponentDeployment";
@@ -64,58 +64,59 @@ export default async function JobRunActor(
       error = err as string;
     }
     type = "LAMBDA";
+  } else if (observation.data.Provider.Compute === 'CODE_BUILD') {
+    let buildDir;
+    let nodejsVersion: number | undefined = undefined;
+    let artifactOverideGuid;
+    if (data.Provider.Config) {
+      console.log("[action] providerConfig", data.Provider.Config);
+      const buildDirItems = data.Provider.Config.filter(item => item.Key === "buildDir");
+      if (buildDirItems.length > 0) {
+        buildDir = buildDirItems[0].Value;
+      }
+      const nodejsVersionItems = data.Provider.Config.filter(
+        (item) => item.Key === "nodejsVersion"
+      );
+      if (nodejsVersionItems.length > 0 && !isNaN(parseInt(nodejsVersionItems[0].Value))) {
+        nodejsVersion = parseInt(nodejsVersionItems[0].Value);
+      }
+
+      const artifactOverideGuidItems = data.Provider.Config.filter(item => item.Key === "artifactOverideGuid");
+      if (artifactOverideGuidItems.length > 0) {
+        artifactOverideGuid = artifactOverideGuidItems[0].Value;
+      }
+    }
+    console.log("[action] buildDir", { builddir: buildDir });
+    console.log("[action] nodejsVersion", { nodejsversion: nodejsVersion });
+
+    try {
+      const codeBuildTriggerResponse = await CodeBuildClient.triggerCodeBuild(
+        {
+          jobRunGuid: jobRunGuid,
+          componentEnvironment: data.Env,
+          componentInputs: JSON.stringify(data.Inputs),
+          componentName: data.Name,
+          componentProvider: JSON.stringify(data.Provider),
+          deploymentGuid: data.DeploymentGuid,
+          buildDir: buildDir ? buildDir : undefined,
+          nodejsVersion: nodejsVersion ? nodejsVersion : undefined,
+          artifactOverideGuid: artifactOverideGuid
+            ? artifactOverideGuid
+            : undefined,
+          Method: data.Method,
+        },
+        console.log
+      );
+
+      awsResourceArn = codeBuildTriggerResponse.build?.arn;
+
+      console.log("[action] codeBuildTriggerResponse", { codeBuildTriggerResponse });
+    } catch(err) {
+      console.error(err);
+      error = err as string;
+    }
+    type = "CODEBUILD";
   } else {
-    // let buildDir;
-    // let nodejsVersion: number | undefined = undefined;
-    // let artifactOverideGuid;
-    // if (data.Provider.Config) {
-    //   console.log("[action] providerConfig", data.Provider.Config);
-    //   const buildDirItems = data.Provider.Config.filter(item => item.Key === "buildDir");
-    //   if (buildDirItems.length > 0) {
-    //     buildDir = buildDirItems[0].Value;
-    //   }
-    //   const nodejsVersionItems = data.Provider.Config.filter(
-    //     (item) => item.Key === "nodejsVersion"
-    //   );
-    //   if (nodejsVersionItems.length > 0 && !isNaN(parseInt(nodejsVersionItems[0].Value))) {
-    //     nodejsVersion = parseInt(nodejsVersionItems[0].Value);
-    //   }
-
-    //   const artifactOverideGuidItems = data.Provider.Config.filter(item => item.Key === "artifactOverideGuid");
-    //   if (artifactOverideGuidItems.length > 0) {
-    //     artifactOverideGuid = artifactOverideGuidItems[0].Value;
-    //   }
-    // }
-    // console.log("[action] buildDir", { builddir: buildDir });
-    // console.log("[action] nodejsVersion", { nodejsversion: nodejsVersion });
-
-    // try {
-    //   const codeBuildTriggerResponse = await CodeBuildClient.triggerCodeBuild(
-    //     {
-    //       jobRunGuid: jobRunGuid,
-    //       componentEnvironment: data.Env,
-    //       componentInputs: JSON.stringify(data.Inputs),
-    //       componentName: data.Name,
-    //       componentProvider: JSON.stringify(data.Provider),
-    //       deploymentGuid: data.DeploymentGuid,
-    //       buildDir: buildDir ? buildDir : undefined,
-    //       nodejsVersion: nodejsVersion ? nodejsVersion : undefined,
-    //       artifactOverideGuid: artifactOverideGuid
-    //         ? artifactOverideGuid
-    //         : undefined,
-    //       Method: data.Method,
-    //     },
-    //     console.log
-    //   );
-
-    //   awsResourceArn = codeBuildTriggerResponse.build?.arn;
-
-    //   console.log("[action] codeBuildTriggerResponse", { codeBuildTriggerResponse });
-    // } catch(err) {
-    //   console.error(err);
-    //   error = err as string;
-    // }
-    // type = "CODEBUILD";
     if(!awsconfig) {
       awsconfig = await ssmConfig(process.env.STAGE);
     }

@@ -3,7 +3,7 @@ import { IEntityObservation } from "../Entities/IEntityObservation";
 import { DeploymentRequest } from "../Entities/DeploymentRequest";
 import { createNewObservation, Observation2 } from "../Observation2";
 import { Component } from "../Entities/Component";
-import { resolveReferencesForDeploymentRequestComponent } from "../../src/utils/parseInputs";
+import { resolveProviderConfigForDeploymentRequest, resolveReferencesForDeploymentRequestComponent } from "../../src/utils/parseInputs";
 import { Policy } from "../Entities/Policy";
 import { ComponentDeployment } from "../Entities/ComponentDeployment";
 import { validateActionAllowedByPolicies } from '../../src/utils/policyValidation';
@@ -63,15 +63,27 @@ export default function DeploymentDecider_DeploymentRequestHandler(
                 dependentComponentObservations || []
             );
 
+            let resolvedProviderConfig = resolveProviderConfigForDeploymentRequest(
+                observation,
+                component,
+                dependentComponentObservations || []
+            );
+
             resolvedInputs.forEach(input => {
                 if(input.FailedLookupMessage && !statusReason.includes(input.FailedLookupMessage)) {
                     statusReason.push(input.FailedLookupMessage);
                 }
             });
 
-            if(resolvedInputs.find(input => input.FailedLookupStatus === 'DEPLOYMENT_FAILED')) {
+            resolvedProviderConfig.forEach(config => {
+                if(config.FailedLookupMessage && !statusReason.includes(config.FailedLookupMessage)) {
+                    statusReason.push(config.FailedLookupMessage)
+                }
+            });
+
+            if(resolvedInputs.find(input => input.FailedLookupStatus === 'DEPLOYMENT_FAILED') || resolvedProviderConfig.find(config => config.FailedLookupStatus === 'DEPLOYMENT_FAILED')) {
                 status = 'DEPLOYMENT_FAILED';
-            } else if (resolvedInputs.find(input => input.FailedLookupStatus === 'WAITING_ON_DEPENDENT_DEPLOYMENT')) {
+            } else if (resolvedInputs.find(input => input.FailedLookupStatus === 'WAITING_ON_DEPENDENT_DEPLOYMENT' || resolvedProviderConfig.find(config => config.FailedLookupStatus === 'WAITING_ON_DEPENDENT_DEPLOYMENT'))) {
                 status = 'WAITING_ON_DEPENDENT_DEPLOYMENT';
             }
 
@@ -87,7 +99,15 @@ export default function DeploymentDecider_DeploymentRequestHandler(
 
             return {
                 Name: component.Name,
-                Provider: component.Provider,
+                Provider: {
+                    Name: component.Provider.Name,
+                    Config: resolvedProviderConfig.map(config => {
+                        return {
+                            Key: config.Key,
+                            Value: config.Value
+                        }
+                    })
+                },
                 Inputs: resolvedInputs.map(input => {
                     return {
                         Key: input.Key,

@@ -1,5 +1,5 @@
 import { Context } from "o18k-ts-aws";
-import { resolveReferenceFromComponentObservation } from "../../src/utils/parseInputs";
+import { resolveProviderConfigReferencesFromComponentObservation, resolveReferenceFromComponentObservation } from "../../src/utils/parseInputs";
 import { Component } from "../Entities/Component";
 import { Deployment } from "../Entities/Deployment";
 import { IEntityObservation } from "../Entities/IEntityObservation";
@@ -29,15 +29,26 @@ export default function DeploymentDecider_ComponentHandler(
             component
           )
 
+          const resolvedProviderConfig = resolveProviderConfigReferencesFromComponentObservation(
+            observation,
+            component
+          );
+
           resolvedInputs.forEach(input => {
             if(input.FailedLookupMessage && !statusReason.includes(input.FailedLookupMessage)) {
               statusReason.push(input.FailedLookupMessage);
             }
           });
 
-          if(resolvedInputs.find(input => input.FailedLookupStatus === 'DEPLOYMENT_FAILED')) {
+          resolvedProviderConfig.forEach(config => {
+            if(config.FailedLookupMessage && !statusReason.includes(config.FailedLookupMessage)) {
+              statusReason.push(config.FailedLookupMessage);
+            }
+          })
+
+          if(resolvedInputs.find(input => input.FailedLookupStatus === 'DEPLOYMENT_FAILED') || resolvedProviderConfig.find(config => config.FailedLookupStatus === 'DEPLOYMENT_FAILED')) {
             status = 'DEPLOYMENT_FAILED';
-          } else if (resolvedInputs.find(input => input.FailedLookupStatus === 'WAITING_ON_DEPENDENT_DEPLOYMENT')) {
+          } else if (resolvedInputs.find(input => input.FailedLookupStatus === 'WAITING_ON_DEPENDENT_DEPLOYMENT') || resolvedProviderConfig.find(config => config.FailedLookupStatus === 'WAITING_ON_DEPENDENT_DEPLOYMENT')) {
             status = 'WAITING_ON_DEPENDENT_DEPLOYMENT';
           } else {
             status = 'ACCEPTED';
@@ -51,6 +62,15 @@ export default function DeploymentDecider_ComponentHandler(
                 Value: input.Value
               }
             }),
+            Provider: {
+              Name: component.Provider.Name,
+              Config: resolvedProviderConfig.map(config => {
+                return {
+                  Key: config.Key,
+                  Value: config.Value
+                }
+              })
+            },
             Status: status,
             StatusReason: statusReason
           }

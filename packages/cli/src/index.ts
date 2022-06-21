@@ -227,7 +227,7 @@ ${component.outputs ? component.outputs.map((output: any) => `${output.name}: ${
     }
     
     // Currently only supports AWS
-    async addCredentialsComponentsToTemplate(template: Template) {
+    addCredentialsComponentsToTemplate(template: Template): Template {
         for(var i = 0; i++; i < template.components.length) {
             if(template.components[i].provider.config) {
                 const credentials = template.components[i].provider.config?.find(item => item.key === 'credentials');
@@ -262,11 +262,10 @@ ${component.outputs ? component.outputs.map((output: any) => `${output.name}: ${
                         }
                         
                     }
-                    
-                    
                 }
             }
         }
+        return template;
     }
 
     async deployTemplate(client: EnvironmentServiceAppSyncClient, template: Template) {
@@ -389,6 +388,7 @@ ${component.outputs ? component.outputs.map((output: any) => `${output.name}: ${
     parseComponentTemplate(file: string) {
         var template = parseYaml(file);
         template.env = resolveInputVariables(template.env, template, this.params);
+        template = this.addCredentialsComponentsToTemplate(template);
         template = resolveComponents(template, this.params);
         if(template.templates) {
             template.templates.forEach((child: any) => {
