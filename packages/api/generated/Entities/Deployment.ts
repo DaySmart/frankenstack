@@ -36,6 +36,7 @@ export namespace Deployment {
         Outputs?: Array<{Key: string, Value: string}>;
         Status: ComponentDeploymentStatus;
         StatusReason?: Array<string>;
+        DependsOn?: Array<string>;
     }
 
     interface Provider {

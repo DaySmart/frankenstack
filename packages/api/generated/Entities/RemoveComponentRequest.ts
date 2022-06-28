@@ -13,6 +13,10 @@ export namespace RemoveComponentRequest {
         DeploymentGuid: string;
         User: string;
         PolicyNames: Array<string>
+        ComponentDeployments: Array<LastComponentDeployment>;
+    }
+
+    export interface LastComponentDeployment {
         ComponentName: string;
         LastDeploymentGuid: string;
     }

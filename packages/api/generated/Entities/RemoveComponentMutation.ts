@@ -9,7 +9,8 @@ export namespace RemoveComponentMutation {
 
     export interface DataSchema {
         Env: string;
-        ComponentName: string;
+        ComponentName?: string;
+        ComponentNames?: Array<string>;
         User: string;
         DeploymentGuid: string;
     }

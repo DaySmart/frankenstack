@@ -41,12 +41,14 @@ export const putPolicy = `mutation PutPolicy($policyName: String!, $statements: 
 export const removeComponent = `mutation RemoveComponent(
   $deploymentGuid: ID!
   $env: String!
-  $componentName: String!
+  $componentName: String
+  $componentNames: [String]
 ) {
   RemoveComponent(
     deploymentGuid: $deploymentGuid
     env: $env
     componentName: $componentName
+    componentNames: $componentNames
   )
 }
 `;

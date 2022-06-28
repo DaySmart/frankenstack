@@ -12,6 +12,7 @@ export default function(event, _context): Observation2<IEntityObservation>[] {
   const removeComponentMutation: RemoveComponentMutation.DataSchema = {
     Env: data.env,
     ComponentName: data.componentName,
+    ComponentNames: data.componentNames,
     User: iamUser,
     DeploymentGuid: data.deploymentGuid
   };

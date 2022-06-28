@@ -49,7 +49,9 @@ describe('RemoveComponentRequestDecider_RemoveComponentMutationHandler', () => {
         const resp: Observation2<RemoveComponentRequest.EntityObservation>[] = handler(removeComponentMutation, dependentObservations, { time: new Date() });
 
 		expect(resp[0].entity).toEqual(RemoveComponentRequest.ENTITY_NAME);
-		expect(resp[0].data.LastDeploymentGuid).toEqual('defghi');
+        expect(resp[0].data.ComponentDeployments.length).toEqual(1);
+        expect(resp[0].data.ComponentDeployments[0].ComponentName).toEqual('removeMutation');
+        expect(resp[0].data.ComponentDeployments[0].LastDeploymentGuid).toEqual('defghi');
 		expect(resp[0].data.PolicyNames).toEqual(['policy']);
         expect(resp[0].data.User).toEqual('frank');
    });

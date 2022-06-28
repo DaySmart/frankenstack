@@ -17,30 +17,45 @@ export default function RemoveComponentRequestDecider_RemoveComponentMutationHan
 
     const dependentComponents = dependentObservations.find(observations =>
         observations.every(obs => obs.entity === Component.ENTITY_NAME)
-      ) as Observation2<Component.EntityObservation>[];
+    ) as Observation2<Component.EntityObservation>[];
 
-      const userObservations = dependentObservations[1] as Observation2<User.EntityObservation>[]
+    const userObservations = dependentObservations[1] as Observation2<User.EntityObservation>[]
     let policyNames: Array<string> = [];
     if(userObservations.length > 0) {
         policyNames = userObservations[0].data.PolicyNames;
     }
 
-      if (dependentComponents && dependentComponents[0]){
-          const component = dependentComponents[0] as Component.EntityObservation;
+    let componentNames: Array<string> = [];
+    if(data.ComponentName) {
+      componentNames.push(data.ComponentName)
+    }
+    if(data.ComponentNames) {
+      componentNames.push(...data.ComponentNames);
+    }
 
-          const removeComponentRequest: RemoveComponentRequest.DataSchema = {
-            Env: data.Env,
-            ComponentName: data.ComponentName,
-            User: data.User,
-            DeploymentGuid: data.DeploymentGuid,
-            LastDeploymentGuid: component.data.DeploymentGuid,
-            PolicyNames: policyNames
+    if(dependentComponents) {
+      const lastComponentDeployments: Array<RemoveComponentRequest.LastComponentDeployment> = componentNames.map(componentName => {
+        const lastComponentObservation = dependentComponents.find(component => component.data.Name === componentName);
+        if(lastComponentObservation) {
+          return {
+            ComponentName: componentName,
+            LastDeploymentGuid: lastComponentObservation.data.DeploymentGuid
+          }
+        } else {
+          throw `Could not find component ${componentName}`;
         }
-      
-        decisions.push(createNewObservation(RemoveComponentRequest.EntityObservation, removeComponentRequest, observation.traceid));
+      });
+
+      const removeComponentRequest: RemoveComponentRequest.DataSchema = {
+        Env: data.Env,
+        ComponentDeployments: lastComponentDeployments,
+        User: data.User,
+        DeploymentGuid: data.DeploymentGuid,
+        PolicyNames: policyNames
       }
+  
+      decisions.push(createNewObservation(RemoveComponentRequest.EntityObservation, removeComponentRequest, observation.traceid));
+    }
 
-
-      return decisions;
-
+    return decisions;
 }

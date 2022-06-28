@@ -35,12 +35,20 @@ export default function DeploymentDecider_ComponentHandler(
             }
           });
 
+          let dependentComponents = component.DependsOn || [];
           if(resolvedInputs.find(input => input.FailedLookupStatus === 'DEPLOYMENT_FAILED')) {
             status = 'DEPLOYMENT_FAILED';
           } else if (resolvedInputs.find(input => input.FailedLookupStatus === 'WAITING_ON_DEPENDENT_DEPLOYMENT')) {
             status = 'WAITING_ON_DEPENDENT_DEPLOYMENT';
           } else {
-            status = 'ACCEPTED';
+            if(latestDeployment.data.Method && latestDeployment.data.Method === 'remove') {
+              if(component.DependsOn) {
+                dependentComponents = component.DependsOn.filter(dependent => dependent !== observation.data.Name)
+              }
+              status = dependentComponents.length === 0 ? 'ACCEPTED' : 'WAITING_ON_DEPENDENT_DEPLOYMENT'
+            } else {
+              status = 'ACCEPTED';
+            }
           }
 
           return {
@@ -52,7 +60,8 @@ export default function DeploymentDecider_ComponentHandler(
               }
             }),
             Status: status,
-            StatusReason: statusReason
+            StatusReason: statusReason,
+            DependsOn: dependentComponents
           }
         } else {
           return component
@@ -64,6 +73,7 @@ export default function DeploymentDecider_ComponentHandler(
     Start: latestDeployment.data.Start,
     User: latestDeployment.data.User,
     Status: latestDeployment.data.Status,
+    Method: latestDeployment.data.Method
   };
 
   if(deployment.Components.every(component => component.Status === 'DEPLOYED' || component.Status === 'DELETED')) {

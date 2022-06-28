@@ -2,6 +2,7 @@ import { Component } from "../../generated/Entities/Component";
 import { Deployment } from "../../generated/Entities/Deployment";
 import { DeploymentRequest } from "../../generated/Entities/DeploymentRequest";
 import { IEntityObservation } from "../../generated/Entities/IEntityObservation";
+import { RemoveComponentRequest } from "../../generated/Entities/RemoveComponentRequest";
 import { ResolvedInputsQuery } from "../../generated/Entities/ResolvedInputsQuery";
 import { Observation2 } from "../../generated/Observation2";
 
@@ -60,6 +61,34 @@ export function isComponentInputsResolved(component: Deployment.Component): bool
        }
     }
     return inputsResolved;
+}
+
+export function getComponentDependentsForRemoveComponentRequest(environment: string, componentName: string, lastComponentDeployments: Array<RemoveComponentRequest.LastComponentDeployment>, dependentDeploymentRequestObservations: Array<DeploymentRequest.EntityObservation>): Array<string> {
+    let dependentComponentNames: Array<string> = [];
+    lastComponentDeployments.forEach(lastComponentDeployment => {
+        const lastDeployment = dependentDeploymentRequestObservations.find(deployment => deployment.data.DeploymentGuid === lastComponentDeployment.LastDeploymentGuid);
+        if(lastDeployment) {
+            const lastDeploymentComponent = lastDeployment.data.Components.find(component => component.Name === lastComponentDeployment.ComponentName);
+            if(lastDeploymentComponent && lastDeploymentComponent.Inputs) {
+                const dependentComponents = lastDeploymentComponent.Inputs.filter(input => {
+                    const match = input.Value.match(LOOKUP_PATTERN);
+                    if(match) {
+                        const lookupParams = match[1].split(':');
+                        const lookupEnvironment = lookupParams[0];
+                        const lookupComponentName = lookupParams[1];
+                        if(lookupEnvironment === environment && lookupComponentName === componentName) {
+                            return true;
+                        }
+                    }
+                    return false;
+                })
+                if(dependentComponents && dependentComponents.length > 0) {
+                    dependentComponentNames.push(lastDeploymentComponent.Name)
+                }
+            }
+        } 
+    });
+    return dependentComponentNames;
 }
 
 export function replaceComponentInputLookups(
