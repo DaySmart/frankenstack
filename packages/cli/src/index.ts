@@ -79,7 +79,7 @@ export default class Deployer {
         } else if(this.command === 'iam') {
             await this.putIAM(this.config._[3], client);
         } else if(this.command === 'remove'){
-            if(this.config.length > 4) {
+            if(this.config._.length > 4) {
                 await this.remove(this.config._[3], this.config._[4], client);
             } else {
                 await this.removeTemplate(this.config._[3], client);
