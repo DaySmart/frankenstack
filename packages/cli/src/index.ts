@@ -79,7 +79,11 @@ export default class Deployer {
         } else if(this.command === 'iam') {
             await this.putIAM(this.config._[3], client);
         } else if(this.command === 'remove'){
-            await this.remove(this.config._[3], this.config._[4], client);  
+            if(this.config._.length > 4) {
+                await this.remove(this.config._[3], this.config._[4], client);
+            } else {
+                await this.removeTemplate(this.config._[3], client);
+            }
         } else if(this.command === 'component') {
             if(this.config._[3] === 'describe') {
                 await this.describeComponent(this.config._[4], this.config._[5], client);
@@ -192,6 +196,18 @@ export default class Deployer {
             env: environment,
             componentName: componenentName
         })
+        this.subscribeToDeploymentUpdates(client);
+    }
+
+    async removeTemplate(file: string, client: EnvironmentServiceAppSyncClient) {
+        const template: Template = this.parseComponentTemplate(file);
+        console.log(`Created deployment ${this.deploymentGuid} for component removal`);
+        const componantNames = template.components.map(component => component.name);
+        await client.removeComponent({
+            deploymentGuid: this.deploymentGuid,
+            env: template.env,
+            componentNames: componantNames
+        });
         this.subscribeToDeploymentUpdates(client);
     }
 

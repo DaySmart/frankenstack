@@ -31,7 +31,8 @@ export default function DeploymentDecider_JobRunHandler(
             } else {
                 return component
             }
-        })
+        }),
+        Method: latestDeployment.data.Method
     }
 
     if(deployment.Components.every(component => component.Status === 'DEPLOYED')) {

@@ -25,10 +25,11 @@ type Mutation {
     ): Boolean!
 
      RemoveComponent(
-    deploymentGuid: ID!
-    env: String!
-    componentName: String!
-  ): Boolean
+      deploymentGuid: ID!
+      env: String!
+      componentName: String
+      componentNames: [String]
+    ): Boolean
 }
 
 type Subscription {

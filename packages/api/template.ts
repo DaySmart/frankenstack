@@ -396,11 +396,11 @@ export function getTemplate(): Template {
               [
                 {
                   filter:
-                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_EQUALS_OBSERVATION_DATA_PROPERTY,
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
                   filterValues: [
                     Deployment.ENTITY_NAME,
                     Deployment.TYPE,
-                    "LastDeploymentGuid",
+                    (observation) => observation.data.ComponentDeployments.map(lastComponentDeployment => lastComponentDeployment.LastDeploymentGuid),
                   ],
                 },
                 {
@@ -410,6 +410,15 @@ export function getTemplate(): Template {
                     Policy.ENTITY_NAME,
                     Policy.TYPE,
                     (observation) => observation.data.PolicyNames,
+                  ],
+                },
+                {
+                  filter:
+                    filters.TOP_1_WHERE_ENTITY_EQUALS_AND_TYPE_EQUALS_AND_ENTITYID_IN_LIST_FROM_FUNCTION,
+                  filterValues: [
+                    DeploymentRequest.ENTITY_NAME,
+                    DeploymentRequest.TYPE,
+                    (observation) => observation.data.ComponentDeployments.map(lastComponentDeployment => lastComponentDeployment.LastDeploymentGuid),
                   ],
                 },
               ],
@@ -703,9 +712,16 @@ export function getTemplate(): Template {
                   filterValues: [
                     Component.ENTITY_NAME,
                     Component.TYPE,
-                    (observation) => [
-                      `${observation.data.Env}:${observation.data.ComponentName}`,
-                    ],
+                    (observation) => {
+                      let componentNames: Array<string> = [];
+                      if(observation.data.ComponentName) {
+                        componentNames.push(observation.data.ComponentName);
+                      }
+                      if(observation.data.ComponentNames) {
+                        componentNames.push(...observation.data.ComponentNames);
+                      }
+                      return componentNames.map(componenentName => `${observation.data.Env}:${componenentName}`)
+                    },
                   ],
                 },
                 {

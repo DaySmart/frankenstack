@@ -202,7 +202,8 @@ export type PutPolicyMutation = {
 export type RemoveComponentMutationVariables = {
   deploymentGuid: string,
   env: string,
-  componentName: string,
+  componentName?: string | null,
+  componentNames?: Array< string | null > | null,
 };
 
 export type RemoveComponentMutation = {

@@ -359,4 +359,181 @@ describe('DeploymentDecider ComponentHandler', () => {
             ])
         )
     });
+
+    it('Component not removed when a dependent component is in progress', () => {
+        const deploymentGuid = 'abcdefg';
+
+        const dependentDeployment: Deployment.DataSchema = {
+            DeploymentGuid: deploymentGuid,
+            Env: 'myenv',
+            Status: 'DEPLOY_IN_PROGRESS',
+            User: 'jenkins',
+            Start: new Date().toISOString(),
+            Method: 'remove',
+            Components: [
+                {
+                    Name: 'comp1',
+                    Provider: {Name: 'hardcoded'},
+                    Status: 'ACCEPTED',
+                    Inputs: [{Key: 'MY_INPUT', Value: '${myenv:comp3:output}'}],
+                    DependsOn: []
+                },
+                {
+                    Name: 'comp2',
+                    Provider: {Name: 'hardcoded'},
+                    Status: 'ACCEPTED',
+                    Inputs: [{Key: 'LOOKUP', Value: '${myenv:comp1:MY_INPUT}'}],
+                    DependsOn: []
+                },
+                {
+                    Name: 'comp3',
+                    Provider: {Name: 'hardcoded'},
+                    Status: 'WAITING_ON_DEPENDENT_DEPLOYMENT',
+                    Inputs: [{Key: 'MY_INPUT', Value: 'SOMETHING'}],
+                    DependsOn: ['comp1', 'comp2']
+                }
+            ]
+        }
+
+        const dependentDeploymentObservation = createNewObservation(
+            Deployment.EntityObservation,
+            dependentDeployment,
+            generateTraceId()
+        );
+
+        const component: Component.DataSchema = {
+            DeploymentGuid: deploymentGuid,
+            Env: 'myenv',
+            Name: 'comp2',
+            Status: 'DELETED',
+            Outputs: [{
+                Key: 'MY_INPUT',
+                Value: 'SOMETHING'
+            }],
+            Create: new Date().toISOString(),
+            Update: new Date().toISOString()
+        }
+
+        const componentObservation = createNewObservation(
+            Component.EntityObservation,
+            component,
+            generateTraceId()
+        );
+
+        const resp = handler(
+            componentObservation,
+            [[dependentDeploymentObservation]],
+            {time: new Date()}
+        );
+
+        console.log(JSON.stringify(resp, null, 2))
+        
+        expect(resp[0].entity).toEqual(Deployment.ENTITY_NAME);
+        expect(resp[0].data.Status).toEqual('DEPLOY_IN_PROGRESS');
+        expect(resp[0].data.Components).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    Name: 'comp2',
+                    Status: 'DELETED'
+                })
+            ])
+        );
+        
+        expect(resp[0].data.Components).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    Name: 'comp3',
+                    Status: 'WAITING_ON_DEPENDENT_DEPLOYMENT',
+                })
+            ])
+        )
+    });
+
+    it('Component removed when a dependent component is deleted', () => {
+        const deploymentGuid = 'abcdefg';
+
+        const dependentDeployment: Deployment.DataSchema = {
+            DeploymentGuid: deploymentGuid,
+            Env: 'myenv',
+            Status: 'DEPLOY_IN_PROGRESS',
+            User: 'jenkins',
+            Start: new Date().toISOString(),
+            Method: 'remove',
+            Components: [
+                {
+                    Name: 'comp1',
+                    Provider: {Name: 'hardcoded'},
+                    Status: 'ACCEPTED',
+                    Inputs: [{Key: 'MY_INPUT', Value: '${myenv:comp3:output}'}]
+                },
+                {
+                    Name: 'comp2',
+                    Provider: {Name: 'hardcoded'},
+                    Status: 'DELETED',
+                    Inputs: [{Key: 'LOOKUP', Value: '${myenv:comp1:MY_INPUT}'}]
+                },
+                {
+                    Name: 'comp3',
+                    Provider: {Name: 'hardcoded'},
+                    Status: 'WAITING_ON_DEPENDENT_DEPLOYMENT',
+                    Inputs: [{Key: 'MY_INPUT', Value: 'SOMETHING'}],
+                    DependsOn: ['comp1']
+                }
+            ]
+        }
+
+        const dependentDeploymentObservation = createNewObservation(
+            Deployment.EntityObservation,
+            dependentDeployment,
+            generateTraceId()
+        );
+
+        const component: Component.DataSchema = {
+            DeploymentGuid: deploymentGuid,
+            Env: 'myenv',
+            Name: 'comp1',
+            Status: 'DELETED',
+            Outputs: [{
+                Key: 'MY_INPUT',
+                Value: 'SOMETHING'
+            }],
+            Create: new Date().toISOString(),
+            Update: new Date().toISOString()
+        }
+
+        const componentObservation = createNewObservation(
+            Component.EntityObservation,
+            component,
+            generateTraceId()
+        );
+
+        const resp = handler(
+            componentObservation,
+            [[dependentDeploymentObservation]],
+            {time: new Date()}
+        );
+
+        console.log(JSON.stringify(resp, null, 2))
+        
+        expect(resp[0].entity).toEqual(Deployment.ENTITY_NAME);
+        expect(resp[0].data.Status).toEqual('DEPLOY_IN_PROGRESS');
+        expect(resp[0].data.Method).toEqual('remove');
+        expect(resp[0].data.Components).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    Name: 'comp1',
+                    Status: 'DELETED'
+                })
+            ])
+        );
+        
+        expect(resp[0].data.Components).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    Name: 'comp3',
+                    Status: 'ACCEPTED',
+                })
+            ])
+        )
+    });
 });
