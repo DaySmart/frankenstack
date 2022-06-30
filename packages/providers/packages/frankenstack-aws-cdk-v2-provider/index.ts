@@ -128,7 +128,7 @@ export default class AWSCDKv2Provider extends BaseProvider {
             this.outputs = [];
         }
 
-        if(result && result.noOp) {
+        if(result) {
             console.log(`Successfully deployed ${result.stackArn}!`);
             this.result = true;
             this.outputs = result.outputs ? Object.entries(result.outputs)?.map(output => {return {Key: output[0], Value: output[1]}}) : []
