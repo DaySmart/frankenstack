@@ -24,6 +24,88 @@ export default class AWSCDKv2Provider extends BaseProvider {
         }, {}) : undefined
         this.awsAccount = this.config.componentProvider.account;
         this.region = providerConfig.region;
+
+        let accountId: string;
+        let awsCredentials;
+        if(this.awsAccount) {
+            accountId = this.awsAccount.accountId;
+            awsCredentials = this.awsAccount.credentials;
+        } else {
+            accountId = providerConfig.account;
+        }
+        console.log('accountId', accountId);
+        
+        const sdkProvider = await this.getSdkProvider(awsCredentials);
+        console.log('sdkProvider', sdkProvider);
+
+        const cloudformation = new CloudFormationDeployments({sdkProvider: sdkProvider});
+
+        const stack = await this.getStack(sdkProvider, accountId, providerConfig);
+        
+        let result: DeployStackResult | undefined;
+        try {
+             result = await cloudformation.deployStack({
+                stack,
+                deployName: stack.stackName,
+                force: true
+            });
+        } catch(err) {
+            this.result = false;
+            this.outputs = [];
+        }
+
+        if(result) {
+            console.log(`Successfully deployed ${result.stackArn}!`);
+            this.result = true;
+            this.outputs = result.outputs ? Object.entries(result.outputs)?.map(output => {return {Key: output[0], Value: output[1]}}) : []
+        }
+    }
+
+    async remove() {
+        const providerConfig = (this.config.componentProvider.config) ? this.config.componentProvider.config.reduce((obj: any, item: any) => {
+            return {
+                ...obj,
+                [item.key]: item.value
+            }
+        }, {}) : undefined
+        this.awsAccount = this.config.componentProvider.account;
+        this.region = providerConfig.region;
+
+        let accountId: string;
+        let awsCredentials;
+        if(this.awsAccount) {
+            accountId = this.awsAccount.accountId;
+            awsCredentials = this.awsAccount.credentials;
+        } else {
+            accountId = providerConfig.account;
+        }
+        console.log('accountId', accountId);
+        
+        const sdkProvider = await this.getSdkProvider(awsCredentials);
+        console.log('sdkProvider', sdkProvider);
+
+        const cloudformation = new CloudFormationDeployments({sdkProvider: sdkProvider});
+
+        const stack = await this.getStack(sdkProvider, accountId, providerConfig);
+
+        try {
+            await cloudformation.destroyStack({
+                stack,
+                deployName: stack.stackName,
+                force: true
+            });
+        } catch(err) {
+            console.error(`Failed to destroy stack ${stack.stackName}`, err);
+            this.result = false;
+            this.outputs = [];
+            return;
+        }
+        console.log(`Successfully destroyed stack ${stack.stackName}`);
+        this.result = true;
+        this.outputs = [];
+    }
+
+    async getStack(sdkProvider: SdkProvider, accountId: string, providerConfig: any) {
         console.log('awsAccount', this.awsAccount);
         let construct: any;
         const { createRequireFromPath } = require('module');
@@ -84,20 +166,7 @@ export default class AWSCDKv2Provider extends BaseProvider {
             return app;
         }
 
-        let accountId: string;
-        let awsCredentials;
-        if(this.awsAccount) {
-            accountId = this.awsAccount.accountId;
-            awsCredentials = this.awsAccount.credentials;
-        } else {
-            accountId = providerConfig.account;
-        }
-        console.log('accountId', accountId);
-        console.log('credentials', awsCredentials);
-
         let app = refreshApp(accountId, providerConfig.region);
-        const sdkProvider = await this.getSdkProvider(awsCredentials);
-        console.log('sdkProvider', sdkProvider);
 
         const cloudExecutable = new CloudExecutable({
             configuration,
@@ -112,27 +181,17 @@ export default class AWSCDKv2Provider extends BaseProvider {
 
         const assembly = await cloudExecutable.synthesize();
 
-        const cloudformation = new CloudFormationDeployments({sdkProvider: sdkProvider});
-
         const stack = assembly.assembly.stacks[0];
-        
-        let result: DeployStackResult | undefined;
-        try {
-             result = await cloudformation.deployStack({
-                stack,
-                deployName: stack.stackName,
-                force: true
-            });
-        } catch(err) {
-            this.result = false;
-            this.outputs = [];
-        }
 
+<<<<<<< Updated upstream
         if(result && result.noOp) {
             console.log(`Successfully deployed ${result.stackArn}!`);
             this.result = true;
             this.outputs = result.outputs ? Object.entries(result.outputs)?.map(output => {return {Key: output[0], Value: output[1]}}) : []
         }
+=======
+        return stack;
+>>>>>>> Stashed changes
     }
 
     async getSdkProvider(paramaterName?: string): Promise<SdkProvider> {
