@@ -36,7 +36,6 @@ export default class AWSCDKv2Provider extends BaseProvider {
         console.log('accountId', accountId);
         
         const sdkProvider = await this.getSdkProvider(awsCredentials);
-        console.log('sdkProvider', sdkProvider);
 
         const cloudformation = new CloudFormationDeployments({sdkProvider: sdkProvider});
 
@@ -82,7 +81,6 @@ export default class AWSCDKv2Provider extends BaseProvider {
         console.log('accountId', accountId);
         
         const sdkProvider = await this.getSdkProvider(awsCredentials);
-        console.log('sdkProvider', sdkProvider);
 
         const cloudformation = new CloudFormationDeployments({sdkProvider: sdkProvider});
 
@@ -145,7 +143,6 @@ export default class AWSCDKv2Provider extends BaseProvider {
         await configuration.load();
 
         function refreshApp(account: string, region: string): App {
-            console.log('refresh app');
             const app = new App({context: { 
                 ...configuration.context.all,
             
@@ -153,16 +150,13 @@ export default class AWSCDKv2Provider extends BaseProvider {
             outdir: 'cdk.frankenstack.out',
             analyticsReporting: false
             });
-            console.log('refresh app', app);
             const s = new CdkStack(app, `${env}-${componentName}`, {
                 env: {
                     account: account,
                     region: region
                 }
             });
-            console.log('refresh stack node meta', s.node.metadata.length);
             app.synth({force: true});
-            console.log('refresh app synth', app);
             return app;
         }
 
@@ -183,19 +177,10 @@ export default class AWSCDKv2Provider extends BaseProvider {
 
         const stack = assembly.assembly.stacks[0];
 
-<<<<<<< Updated upstream
-        if(result && result.noOp) {
-            console.log(`Successfully deployed ${result.stackArn}!`);
-            this.result = true;
-            this.outputs = result.outputs ? Object.entries(result.outputs)?.map(output => {return {Key: output[0], Value: output[1]}}) : []
-        }
-=======
         return stack;
->>>>>>> Stashed changes
     }
 
     async getSdkProvider(paramaterName?: string): Promise<SdkProvider> {
-        console.log('getSdkProvider parameterName', paramaterName);
         if(paramaterName) {
             const ssm = new SSM();
             const param = await ssm.getParameter({
@@ -204,7 +189,6 @@ export default class AWSCDKv2Provider extends BaseProvider {
             }).promise();
 
             if(param.Parameter && param.Parameter.Value) {
-                console.log('getSdkProvider paramValue', param.Parameter.Value);
                 const credentials = JSON.parse(param.Parameter.Value);
                 const credentialProviders = [
                     () => { 
