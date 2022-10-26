@@ -20,7 +20,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "aws-appsync": "^4.1.1",
-    "aws-appsync-auth-link": "2.0.5",
+    "aws-appsync-auth-link": "2.0.8",
     "es6-promise": "^4.2.8",
     "graphql": "^15.6.0",
     "graphql-tag": "^2.11.0",
