@@ -25,7 +25,7 @@
   "dependencies": {
     "@daysmart/frankenstack-appsync-client": "^1.1.0",
     "@unbounce/parse-aws-arn": "^1.2.2",
-    "deep-equal": "^2.0.5",
+    "deep-equal": "^2.1.0",
     "deepdash": "^5.3.7",
     "dsi-aws-boilerplate": "^4.0.1",
     "graphql": "^15.4.0",
