@@ -33,7 +33,7 @@
     "table": "^6.8.0",
     "uuid": "^8.3.2",
     "wrap-ansi": "^7.0.0",
-    "yaml": "1.10.2",
+    "yaml": "2.2.2",
     "yargs": "^16.2.0",
     "aws-sdk": "^2.1116.0",
     "frankenstack-base-provider": "0.0.1"
