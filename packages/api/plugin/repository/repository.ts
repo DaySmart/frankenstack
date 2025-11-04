@@ -1,5 +1,6 @@
 import aws from "aws-sdk";
 import { filters, Logger, Query, Repository, ObservationFilterFunction } from "o18k-ts-aws";
+export { Repository } from "o18k-ts-aws";
 import { ComponentDeployment } from "../../generated/Entities/ComponentDeployment";
 import { IEntityObservation } from "../../generated/Entities/IEntityObservation";
 import { JobRun } from "../../generated/Entities/JobRun";
