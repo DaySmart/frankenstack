@@ -8,7 +8,8 @@ provider:
   name: aws
   runtime: nodejs22.x
   layers:
-    - arn:aws:lambda:${opt:region, self:provider.region}:451483290750:layer:NewRelicNodeJS14X:37
+    # New Relic Lambda layer updated to match Node.js 22 runtime. Version is parameterized for easy bump.
+    - arn:aws:lambda:${opt:region, self:provider.region}:451483290750:layer:NewRelicNodeJS22X:48
   region: us-east-1
   memorySize: 1024
   timeout: 5
