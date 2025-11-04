@@ -12,7 +12,7 @@ export namespace DeploymentRequest {
         Env: string;
         DeploymentGuid: string;
         Components: Array<Component>
-        User: string;
+        User?: string;
         PolicyNames: Array<string>
     }
 
