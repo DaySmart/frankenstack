@@ -24,7 +24,7 @@ export namespace Deployment {
         Components: Array<Component>
         Start?: string;
         Finish?: string;
-        User: string;
+        User?: string;
         Status: DeploymentStatus;
         Method?: string;
     }
