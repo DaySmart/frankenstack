@@ -1,5 +1,4 @@
 import { Context } from "o18k-ts-aws";
-import { DeploymentUpdate } from "../Entities/DeploymentUpdate";
 import { IEntityObservation } from "../Entities/IEntityObservation";
 import { JobRun } from "../Entities/JobRun";
 import { JobRunFinished } from "../Entities/JobRunFinished";
