@@ -4,96 +4,96 @@ import { Deployment } from '../Entities/Deployment';
 import handler from './DeploymentDecider_JobRunHandler';
 
 describe('DeploymentDecider JobRunHandler', () => {
-    it('JobRun marks ComponentDeployment in-progress', () => {
-        const dependentDeployment: Deployment.DataSchema = {
-            DeploymentGuid: 'abcdefg',
-            Env: 'myenv',
-            Status: 'DEPLOY_IN_PROGRESS',
-            User: 'jenkins',
-            Start: new Date().toISOString(),
-            Components: [{
-                Name: 'comp1',
-                Provider: {Name: 'hardcoded'},
-                Status: 'ACCEPTED'
-            }]
-        };
+	it('JobRun marks ComponentDeployment in-progress', () => {
+		const dependentDeployment: Deployment.DataSchema = {
+			DeploymentGuid: 'abcdefg',
+			Env: 'myenv',
+			Status: 'DEPLOY_IN_PROGRESS',
+			User: 'jenkins',
+			Start: new Date().toISOString(),
+			Components: [{
+				Name: 'comp1',
+				Provider: {Name: 'hardcoded'},
+				Status: 'ACCEPTED'
+			}]
+		};
 
-        const dependentDeploymentObservation = createNewObservation(
-            Deployment.EntityObservation,
-            dependentDeployment,
-            generateTraceId()
-        );
+		const dependentDeploymentObservation = createNewObservation(
+			Deployment.EntityObservation,
+			dependentDeployment,
+			generateTraceId()
+		);
 
-        const jobRun: JobRun.DataSchema = {
-            DeploymentGuid: 'abcdefg',
-            ComponentName: 'comp1',
-            JobRunGuid: 'hijklmnop',
-            Type: 'CODEBUILD',
-            CloudWatchLogGroup: 'loggroup',
-            CloudWatchLogStream: 'abcdefg',
-            Env: 'dev'
-        };
+		const jobRun: JobRun.DataSchema = {
+			DeploymentGuid: 'abcdefg',
+			ComponentName: 'comp1',
+			JobRunGuid: 'hijklmnop',
+			Type: 'CODEBUILD',
+			CloudWatchLogGroup: 'loggroup',
+			CloudWatchLogStream: 'abcdefg',
+			Env: 'dev'
+		};
 
-        const jobRunObservation = createNewObservation(
-            JobRun.EntityObservation,
-            jobRun,
-            generateTraceId()
-        );
-        
-        const resp = handler(
-            jobRunObservation,
-            [[dependentDeploymentObservation]],
-            {time: new Date()}
-        );
+		const jobRunObservation = createNewObservation(
+			JobRun.EntityObservation,
+			jobRun,
+			generateTraceId()
+		);
 
-        expect(resp[0].data.Components[0].Status).toEqual('DEPLOY_IN_PROGRESS');
-    });
+		const resp = handler(
+			jobRunObservation,
+			[[dependentDeploymentObservation]],
+			{time: new Date()}
+		);
 
-    it('JobRun marks ComponentDeployment failed when it includes error', () => {
-        const dependentDeployment: Deployment.DataSchema = {
-            DeploymentGuid: 'abcdefg',
-            Env: 'myenv',
-            Status: 'DEPLOY_IN_PROGRESS',
-            User: 'jenkins',
-            Start: new Date().toISOString(),
-            Components: [{
-                Name: 'comp1',
-                Provider: {Name: 'hardcoded'},
-                Status: 'ACCEPTED'
-            }]
-        };
+		expect(resp[0].data.Components[0].Status).toEqual('DEPLOY_IN_PROGRESS');
+	});
 
-        const dependentDeploymentObservation = createNewObservation(
-            Deployment.EntityObservation,
-            dependentDeployment,
-            generateTraceId()
-        );
+	it('JobRun marks ComponentDeployment failed when it includes error', () => {
+		const dependentDeployment: Deployment.DataSchema = {
+			DeploymentGuid: 'abcdefg',
+			Env: 'myenv',
+			Status: 'DEPLOY_IN_PROGRESS',
+			User: 'jenkins',
+			Start: new Date().toISOString(),
+			Components: [{
+				Name: 'comp1',
+				Provider: {Name: 'hardcoded'},
+				Status: 'ACCEPTED'
+			}]
+		};
 
-        const jobRun: JobRun.DataSchema = {
-            DeploymentGuid: 'abcdefg',
-            ComponentName: 'comp1',
-            JobRunGuid: 'hijklmnop',
-            Type: 'CODEBUILD',
-            CloudWatchLogGroup: 'loggroup',
-            CloudWatchLogStream: 'abcdefg',
-            Error: 'Bad',
-            Env: 'dev'
-        };
+		const dependentDeploymentObservation = createNewObservation(
+			Deployment.EntityObservation,
+			dependentDeployment,
+			generateTraceId()
+		);
 
-        const jobRunObservation = createNewObservation(
-            JobRun.EntityObservation,
-            jobRun,
-            generateTraceId()
-        );
-        
-        const resp = handler(
-            jobRunObservation,
-            [[dependentDeploymentObservation]],
-            {time: new Date()}
-        );
+		const jobRun: JobRun.DataSchema = {
+			DeploymentGuid: 'abcdefg',
+			ComponentName: 'comp1',
+			JobRunGuid: 'hijklmnop',
+			Type: 'CODEBUILD',
+			CloudWatchLogGroup: 'loggroup',
+			CloudWatchLogStream: 'abcdefg',
+			Error: 'Bad',
+			Env: 'dev'
+		};
 
-        expect(resp[0].data.Components[0].Status).toEqual('DEPLOYMENT_FAILED');
-        expect(resp[0].data.Components[0].StatusReason).toEqual(['Bad']);
-        expect(resp[0].data.Status).toEqual('DEPLOYMENT_FAILED');
-    });
-})
+		const jobRunObservation = createNewObservation(
+			JobRun.EntityObservation,
+			jobRun,
+			generateTraceId()
+		);
+
+		const resp = handler(
+			jobRunObservation,
+			[[dependentDeploymentObservation]],
+			{time: new Date()}
+		);
+
+		expect(resp[0].data.Components[0].Status).toEqual('DEPLOYMENT_FAILED');
+		expect(resp[0].data.Components[0].StatusReason).toEqual(['Bad']);
+		expect(resp[0].data.Status).toEqual('DEPLOYMENT_FAILED');
+	});
+});

@@ -4,14 +4,14 @@
 // import { IEntityObservation } from "../../generated/Entities/IEntityObservation";
 // import { Observation2 } from "../../generated/Observation2";
 
-import { lambdaDecider } from "o18k-ts-aws";
-import { getTemplate } from "../../template";
+import { lambdaDecider } from 'o18k-ts-aws';
+import { getTemplate } from '../../template';
 
 // export const repository = new DynamoDbRepository();
 
 export async function lambdaDeciderWrapper(event, context): Promise<any> {
-  const template = getTemplate();
-  return lambdaDecider(event, context, template);
+	const template = getTemplate();
+	return lambdaDecider(event, context, template);
 }
 //   context.callbackWaitsForEmptyEventLoop = true;
 

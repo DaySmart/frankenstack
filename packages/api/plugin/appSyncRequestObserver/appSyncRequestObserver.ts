@@ -9,13 +9,13 @@
 // // import { ResolvedInputsQuery } from "../../generated/Entities/ResolvedInputsQuery";
 // // import { getComponentLookup, replaceComponentInputLookups } from "../../src/utils/parseInputs";
 
-import { appSyncRequestObserver } from "o18k-ts-aws";
-import { getTemplate } from "../../template";
+import { appSyncRequestObserver } from 'o18k-ts-aws';
+import { getTemplate } from '../../template';
 
 export async function appSyncRequestObserverWrapper(event, context) {
-  const template = getTemplate();
-  console.log({ template });
-  return appSyncRequestObserver(event, context, template);
+	const template = getTemplate();
+	console.log({ template });
+	return appSyncRequestObserver(event, context, template);
 }
 
 //   log("[graphqlRequestObserver] request", { event, context }, event, context);

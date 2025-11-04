@@ -2,12 +2,12 @@
 // // import { receiveAction } from "../router/router";
 // // import { DynamoDbRepository } from "../repository/repository";
 
-import { customActor } from "o18k-ts-aws";
-import { getTemplate } from "../../template";
+import { customActor } from 'o18k-ts-aws';
+import { getTemplate } from '../../template';
 
 export async function customActorWrapper(event, context) {
-  const template = getTemplate();
-  return customActor(event, context, template);
+	const template = getTemplate();
+	return customActor(event, context, template);
 }
 //   log("[httpAction] event", { event }, event, context);
 
