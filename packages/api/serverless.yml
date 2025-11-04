@@ -266,19 +266,8 @@ functions:
               - Arn
   eventBridgeRequestObserver:
     handler: plugin/eventBridgeRequestObserver/eventBridgeRequestObserver.eventBridgeRequestObserverWrapper
-    events:
-      - eventBridge:
-          pattern:
-            source:
-              - aws.codebuild
-            detail-type:
-              - CodeBuild Build State Change
-            detail:
-              build-status:
-                - STOPPED
-                - FAILED
-              project-name:
-                - { "Ref": "CodeBuildProject" }
+    # Removed Serverless eventBridge event to eliminate deprecated custom resource Lambda (nodejs12.x).
+    # EventBridge rule and permission are now defined manually in Resources below.
 
 resources:
   Conditions:
@@ -291,6 +280,7 @@ resources:
     dynamoDbTable:
       Type: AWS::DynamoDB::Table
       DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         SSESpecification:
           SSEEnabled: true
@@ -504,6 +494,34 @@ resources:
       Properties:
         QueueName: ${self:service.name}-${opt:stage}-migrateQueueDLQ
         MessageRetentionPeriod: 1209600
+
+    # Direct EventBridge rule replacing previous serverless custom resource implementation.
+    EventBridgeRequestObserverRule1:
+      Type: AWS::Events::Rule
+      Properties:
+        Name: ${self:service.name}-${opt:stage}-eventBridgeRequestObserver-rule-1
+        EventPattern:
+          source:
+            - aws.codebuild
+          detail-type:
+            - CodeBuild Build State Change
+          detail:
+            build-status:
+              - STOPPED
+              - FAILED
+            project-name:
+              - { Ref: CodeBuildProject }
+        Targets:
+          - Arn: { Fn::GetAtt: [EventBridgeRequestObserverLambdaFunction, Arn] }
+            Id: ${self:service.name}-${opt:stage}-eventBridgeRequestObserver-target-1
+    EventBridgeRequestObserverLambdaPermissionEvents:
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName:
+          { Fn::GetAtt: [EventBridgeRequestObserverLambdaFunction, Arn] }
+        Action: lambda:InvokeFunction
+        Principal: events.amazonaws.com
+        SourceArn: { Fn::GetAtt: [EventBridgeRequestObserverRule1, Arn] }
 
 plugins:
   - serverless-prune-plugin
