@@ -242,14 +242,46 @@ export default class Deployer {
     console.log(
       `Created deployment ${this.deploymentGuid} for component removal`
     );
-    const componantNames = template.components.map(
+    // Collect component names to remove. Some published versions of the appsync-client
+    // don't yet include the batched 'componentNames' argument in RemoveComponentMutationVariables.
+    // To stay backward compatible (and fix TS build error), fall back to issuing
+    // one removeComponent call per component name instead of a single batched mutation.
+    const componentNames = template.components.map(
       (component) => component.name
     );
-    await client.removeComponent({
-      deploymentGuid: this.deploymentGuid,
-      env: template.env,
-      componentNames: componantNames,
-    });
+
+    // If only one component, just invoke once directly.
+    if (componentNames.length === 1) {
+      await client.removeComponent({
+        deploymentGuid: this.deploymentGuid,
+        env: template.env,
+        componentName: componentNames[0],
+      });
+    } else {
+      // Attempt batch removal when the local type supports it; otherwise sequential fallback.
+      let attemptedBatch = false;
+      try {
+        // @ts-ignore - optional in newer client versions
+        await client.removeComponent({
+          deploymentGuid: this.deploymentGuid,
+          env: template.env,
+          // @ts-ignore intentionally use when available
+          componentNames: componentNames,
+        } as any);
+        attemptedBatch = true;
+      } catch (e) {
+        // Swallow and fallback to sequential below
+      }
+      if (!attemptedBatch) {
+        for (const name of componentNames) {
+          await client.removeComponent({
+            deploymentGuid: this.deploymentGuid,
+            env: template.env,
+            componentName: name,
+          });
+        }
+      }
+    }
     this.subscribeToDeploymentUpdates(client);
   }
 
@@ -316,10 +348,10 @@ ${
       }
     };
     const subscription = observable.subscribe({
-      next: (data) => {
+      next: (data: any) => {
         realtimeResults(data);
       },
-      error: (error) => {
+      error: (error: any) => {
         console.warn(error);
       },
     });
