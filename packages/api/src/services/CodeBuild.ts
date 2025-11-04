@@ -76,7 +76,7 @@ export module CodeBuildClient {
             phases: {
                 install: {
                     'runtime-versions': {
-                        nodejs: nodejsVersion ?? 12
+                        nodejs: nodejsVersion ?? 22
                     },
                     commands: buildDir ? [
                         `cd ${buildDir}`,
