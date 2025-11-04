@@ -43,7 +43,7 @@ describe('ComponentDecider JobRunFinishedHandler', () => {
 		const resp: Observation2<Component.EntityObservation>[] = handler(jobRunFinishedWithSuccess, [[]], { time: new Date() });
 
 		expect(resp[0].entity).toEqual(Component.ENTITY_NAME);
-		expect(resp[0].data.Outputs).toEqual([{ Key: 'Key1', Value: 'Value1'}]);
+		expect(resp[0].data.Outputs).toEqual([{ Key: 'Key1', Value: 'Value1'}])
 		expect(resp[0].data.Status).toEqual('DEPLOYED');
 	});
 
@@ -69,7 +69,7 @@ describe('ComponentDecider JobRunFinishedHandler', () => {
 
 		expect(resp[0].entity).toEqual(Component.ENTITY_NAME);
 		expect(resp[0].data.Status).toEqual('DEPLOYMENT_FAILED');
-		expect(resp[0].data.Outputs).toEqual([{ Key: 'Key1', Value: 'Value1'}]);
+		expect(resp[0].data.Outputs).toEqual([{ Key: 'Key1', Value: 'Value1'}])
 	});
 
 	it('Failed deployment without outputs', () => {
@@ -88,6 +88,6 @@ describe('ComponentDecider JobRunFinishedHandler', () => {
 
 		expect(resp[0].entity).toEqual(Component.ENTITY_NAME);
 		expect(resp[0].data.Status).toEqual('DEPLOYMENT_FAILED');
-		expect(resp[0].data.Outputs).toEqual([{ Key: 'KeyOld', Value: 'ValueOld'}]);
+		expect(resp[0].data.Outputs).toEqual([{ Key: 'KeyOld', Value: 'ValueOld'}])
 	});
 });

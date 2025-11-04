@@ -3,12 +3,12 @@
 // import { send } from '../router/router';
 // import generateObservationFromSNS from './generateObservationFromSNS';
 
-import { snsTopicObserver } from 'o18k-ts-aws';
-import { getTemplate } from '../../template';
+import { snsTopicObserver } from "o18k-ts-aws";
+import { getTemplate } from "../../template";
 
 export async function snsRequestObserverWrapper(event, context) {
-	const template = getTemplate();
-	return snsTopicObserver(event, context, template);
+  const template = getTemplate();
+  return snsTopicObserver(event, context, template);
 }
 //     log("[snsRequestObserver] request", { event, context }, event, context);
 

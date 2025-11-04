@@ -4,7 +4,7 @@ on:
     branches:
       - master
     paths:
-      - "packages/appsync-client/**"
+      - 'packages/appsync-client/**'
 jobs:
   Publish-package:
     runs-on: ubuntu-latest

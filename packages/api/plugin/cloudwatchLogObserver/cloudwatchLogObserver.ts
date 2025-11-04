@@ -3,12 +3,12 @@
 // import { DynamoDbRepository } from "../repository/repository";
 // import generateObservationFromCloudwatchLogs from './generateObservationFromCloudwatchLogs';
 
-import { cloudWatchLogObserver } from 'o18k-ts-aws';
-import { getTemplate } from '../../template';
+import { cloudWatchLogObserver } from "o18k-ts-aws";
+import { getTemplate } from "../../template";
 
 export async function cloudWatchLogObserverWrapper(event, context) {
-	const template = getTemplate();
-	return cloudWatchLogObserver(event, context, template);
+  const template = getTemplate();
+  return cloudWatchLogObserver(event, context, template);
 }
 
 //     log("[graphqlRequestObserver] request", { event, context }, event, context);
