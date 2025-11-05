@@ -8,7 +8,7 @@
     "build": "tsc",
     "deploy": "npx sls deploy -v",
     "test": "jest",
-    "integ": "tsc && sls invoke test --root dist -s integ -p test/integ",
+    "integ": "tsc && sls invoke -f lambdaDecider -p testing/event.lambdaDecider.json -s prod",
     "e2e": "bash ./test/e2e.sh $ENV"
   },
   "keywords": [],
@@ -58,6 +58,7 @@
     "jest-environment-node": "^27.5.1",
     "serverless": "^1.83.2",
     "serverless-appsync-plugin": "^1.11.3",
+    "serverless-jest-plugin": "^0.3.0",
     "serverless-plugin-git-variables": "^4.0.0",
     "serverless-plugin-lambda-dead-letter": "^1.2.1",
     "serverless-prune-plugin": "^1.4.2",
