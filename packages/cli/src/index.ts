@@ -111,6 +111,34 @@ export default class Deployer {
     console.log("Created deployment", this.deploymentGuid);
     console.log("Packaging project...");
 
+    // List files that will be included in the deployment package (excluding node_modules)
+    try {
+      const fg = require("fast-glob");
+      const files: string[] = fg.sync(["**"], {
+        ignore: ["node_modules/**"],
+        dot: true,
+        onlyFiles: true,
+      });
+      const maxToShow = process.env.FRANKENSTACK_PACKAGE_FILE_LIMIT
+        ? parseInt(process.env.FRANKENSTACK_PACKAGE_FILE_LIMIT, 10)
+        : 200;
+      console.log(
+        `Including ${files.length} files in deployment artifact$${
+          files.length > maxToShow ? ` (showing first ${maxToShow})` : ""
+        }.`
+      );
+      files.slice(0, maxToShow).forEach((f) => console.log(`  - ${f}`));
+      if (files.length > maxToShow) {
+        console.log(
+          `  ... (${
+            files.length - maxToShow
+          } more not displayed; set FRANKENSTACK_PACKAGE_FILE_LIMIT to adjust)`
+        );
+      }
+    } catch (err) {
+      console.warn("Could not enumerate package files", err);
+    }
+
     const output = new stream.PassThrough();
     const archive = archiver("zip");
 
@@ -142,7 +170,7 @@ export default class Deployer {
     }
     const region = awsConfig.aws_user_files_s3_bucket_region || "us-east-1";
     console.log(
-      `Uploading deployment artifact to bucket: ${targetBucket} in region: ${region} with credentials from profile: ${this.config.profile}`
+      `Uploading deployment artifact to bucket: ${targetBucket} in region: ${region}`
     );
 
     const upload = new Upload({
