@@ -442,6 +442,19 @@ resources:
               - /
               - - Ref: DeploymentPackageBucket
                 - packages
+          BuildSpec: |
+            version: 0.2
+            phases:
+              install:
+                commands:
+                  - echo "[Install] Starting install phase"
+                  - if [ -f package.json ]; then echo "Found package.json, installing dependencies"; npm ci || npm install; else echo "No package.json found, skipping npm install"; fi
+              build:
+                commands:
+                  - if [ -f package.json ]; then echo "Running build"; if npm run | grep -q "build"; then npm run build; else echo "No build script defined"; fi; else echo "Skipping build phase"; fi
+            artifacts:
+              files:
+                - '**/*'
     CodeBuildRole:
       Type: AWS::IAM::Role
       Properties:
