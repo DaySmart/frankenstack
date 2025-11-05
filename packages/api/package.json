@@ -23,7 +23,7 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "@daysmart/frankenstack-appsync-client": "^1.8.4",
+    "@daysmart/frankenstack-appsync-client": "^1.8.5",
     "@unbounce/parse-aws-arn": "^1.2.2",
     "deep-equal": "^2.0.5",
     "deepdash": "^5.3.7",
