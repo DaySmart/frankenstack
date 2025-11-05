@@ -1,0 +1,38 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Frank Deploy (Local Repo + Debug)",
+      "type": "node",
+      "request": "launch",
+      "program": "c:/Dev/frankenstack/packages/cli/bin/index.js",
+      "cwd": "c:/Dev/DSICollection/infrastructure/app-params/prod",
+      "args": ["deploy", "template.hardcoded.yml"],
+      "env": {
+        "FRANK_DEBUG": "1",
+        "AWS_PROFILE": "frankenstack.FrankenstackUser"
+      },
+      "console": "internalConsole",
+      "smartStep": true,
+      "sourceMaps": true,
+      "outFiles": ["c:/Dev/frankenstack/packages/cli/**/*.js"],
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Frank Deploy (Integrated Terminal)",
+      "type": "node",
+      "request": "launch",
+      "program": "c:/Dev/frankenstack/packages/cli/bin/index.js",
+      "cwd": "c:/Dev/DSICollection/infrastructure/app-params/prod",
+      "args": ["deploy", "template.hardcoded.yml"],
+      "env": {
+        "FRANK_DEBUG": "1"
+      },
+      "console": "integratedTerminal",
+      "smartStep": true,
+      "sourceMaps": true,
+      "outFiles": ["c:/Dev/frankenstack/packages/cli/**/*.js"],
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
+}

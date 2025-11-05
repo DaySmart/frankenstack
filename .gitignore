@@ -13,6 +13,7 @@ dist
 infrastructure
 .deployer
 
+*.js.map
 **/*.js
 **/*.d.ts
 

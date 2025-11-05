@@ -20,7 +20,19 @@ global.WebSocket = require("ws");
 require("es6-promise").polyfill();
 require("isomorphic-fetch");
 
-process.on("uncaughtException", (err) => {});
+// Surface previously swallowed exceptions so debugging doesn't appear to "do nothing".
+process.on("uncaughtException", (err) => {
+  console.error(
+    "[frank] Uncaught exception:",
+    err && err.stack ? err.stack : err
+  );
+});
+process.on("unhandledRejection", (reason: any) => {
+  console.error(
+    "[frank] Unhandled rejection:",
+    reason && reason.stack ? reason.stack : reason
+  );
+});
 
 interface Template {
   env: string;
@@ -353,6 +365,17 @@ ${
     const observable = client.subscribeToDeploymentUpdate(this.deploymentGuid);
 
     const realtimeResults = (data: any) => {
+      /*
+      data:{
+        deploymentGuid: "83619bc0-48f1-4360-bf44-25dd2a6fcb62",
+        type: "INFO",
+        message: "[Container] 2025/11/05 15:40:47.373880 Waiting for agent ping",
+        moreInfoComponentName: null,
+        moreInfoType: null,
+        moreInfoKey: null,
+        __typename: "DeploymentUpdate",
+      }
+      */
       console.log(data.data.subscribeToDeploymentUpdate.message);
       let updateType = data.data.subscribeToDeploymentUpdate.type;
       if (["DONE", "ERROR"].includes(updateType)) {
