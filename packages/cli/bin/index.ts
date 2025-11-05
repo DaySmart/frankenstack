@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const minimist = require("minimist");
 const version = require("../package.json").version;
+const { getLogger, attachConsole } = require("../src/utils/fileLogger");
 
 // Lightweight debug banner & helpers (enabled when FRANK_DEBUG or FRANK_VERBOSE set)
 const DEBUG_ENABLED = !!(process.env.FRANK_DEBUG || process.env.FRANK_VERBOSE);
@@ -11,6 +12,16 @@ function debugLog(...args: any[]) {
   }
 }
 debugLog("Entrypoint loaded", { argv: process.argv });
+
+// Initialize global file logger early & patch console so all output is captured.
+let logger;
+try {
+  logger = getLogger({ command: "startup" });
+  attachConsole(logger);
+  logger.log("startup", { pid: process.pid, platform: process.platform });
+} catch (e) {
+  debugLog("Failed to init file logger", e);
+}
 
 process.on("beforeExit", (code) => debugLog("beforeExit", code));
 process.on("exit", (code) => debugLog("exit", code));
@@ -53,7 +64,13 @@ Options:
     debugLog("Loading Deployer class from ../src");
     Deployer = require("../src").default;
   }
+  // Recreate logger with command context if available (deploymentGuid produced inside class)
   const deploy = new Deployer(command, file, args);
+  try {
+    if (deploy?.deploymentGuid) {
+      logger = getLogger({ command, deploymentGuid: deploy.deploymentGuid });
+    }
+  } catch {}
   debugLog("Deployer instance created");
   try {
     debugLog("Invoking deploy.run()");

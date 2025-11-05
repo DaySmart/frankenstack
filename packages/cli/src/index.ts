@@ -11,6 +11,7 @@ import { defaultProvider } from "@aws-sdk/credential-provider-node";
 import { S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { resolveComponents, resolveInputVariables } from "./utils/variables";
+import { FileLogger } from "./utils/fileLogger";
 
 // The NodeJS.Global type is no longer exported in recent @types/node versions.
 // Use globalThis to augment instead.
@@ -58,6 +59,7 @@ export default class Deployer {
   public config: any;
   public client: any;
   public params: any;
+  public logger: FileLogger | null = null;
 
   constructor(command: any, file: string, config?: any) {
     this.file = file;
@@ -65,6 +67,19 @@ export default class Deployer {
     this.config = config;
     this.deploymentGuid = uuid.v4();
     this.params = {};
+    // Initialize general command logger early; deploy-specific file added after parse.
+    try {
+      this.logger = new FileLogger({
+        command: this.command,
+        deploymentGuid: this.deploymentGuid,
+      });
+      this.logger.log("constructor", {
+        deploymentGuid: this.deploymentGuid,
+        file,
+      });
+    } catch (err) {
+      console.warn("Failed to initialize file logger", err);
+    }
     if (config.params) {
       try {
         this.params = JSON.parse(config.params);
@@ -79,7 +94,11 @@ export default class Deployer {
       profile: this.config.profile,
     })();
     AWS.config.credentials = credentials;
+    this.logger?.log("credentials-resolved");
     const awsConfig = await ssmConfig(credentials, this.config.stageOveride);
+    this.logger?.log("ssm-config-loaded", {
+      stage: this.config.stageOveride || "prod",
+    });
     const client = new EnvironmentServiceAppSyncClient(
       awsConfig,
       credentials //await (new CredentialProviderChain()).resolvePromise()
@@ -111,6 +130,7 @@ export default class Deployer {
     } else {
       console.error(`The command ${this.command} is not implemented`);
     }
+    this.logger?.close("completed");
   }
 
   async deploy(
@@ -122,6 +142,9 @@ export default class Deployer {
     const template: Template = this.parseComponentTemplate(file);
     console.log("Created deployment", this.deploymentGuid);
     console.log("Packaging project...");
+    this.logger?.log("deploy-start", {
+      componentCount: template.components.length,
+    });
 
     // List files that will be included in the deployment package (excluding node_modules)
     try {
@@ -149,6 +172,9 @@ export default class Deployer {
       }
     } catch (err) {
       console.warn("Could not enumerate package files", err);
+      this.logger?.log("package-file-enumeration-error", {
+        error: (err as any)?.message || err,
+      });
     }
 
     const output = new stream.PassThrough();
@@ -199,6 +225,7 @@ export default class Deployer {
     });
     await upload.done();
     console.log("Packaging complete!");
+    this.logger?.log("artifact-uploaded", { bucket: targetBucket, region });
 
     await this.deployTemplate(client, template);
   }
@@ -380,11 +407,13 @@ ${
       }
       */
       console.log(data.data.subscribeToDeploymentUpdate.message);
+      this.logger?.logDeploymentEvent(data.data.subscribeToDeploymentUpdate);
       let updateType = data.data.subscribeToDeploymentUpdate.type;
       if (["DONE", "ERROR"].includes(updateType)) {
         let exitCode = updateType === "ERROR" ? 1 : 0;
         try {
           subscription.unsubscribe();
+          this.logger?.close(updateType === "ERROR" ? "error" : "done");
           process.exit(exitCode);
         } catch (err) {}
       }
