@@ -1,7 +1,7 @@
 import { sendDeploymentForm, deploymentUpdate, putPolicy, putUser, removeComponent } from './src/graphql/mutations';
 import gql from 'graphql-tag';
 import { subscribeToDeploymentUpdate } from './src/graphql/subscriptions';
-import { Observable } from 'apollo-client/util/Observable'
+import { Observable } from "zen-observable-ts";
 import { DeploymentUpdateMutationVariables, InputComponent, PutPolicyMutationVariables, PutUserMutationVariables, RemoveComponentMutation, RemoveComponentMutationVariables, Template } from './src/graphql/types';
 import { FetchResult } from 'apollo-link';
 import { getComponentRollbackStateFull, describeComponentFull, getDeploymentRequestFull } from './src/graphql/customQueries';
@@ -117,7 +117,7 @@ export class EnvironmentServiceAppSyncClient {
         });
     }
 
-    subscribeToDeploymentUpdate(deploymentGuid: string): Observable<any> {
+    subscribeToDeploymentUpdate(deploymentGuid: string): ReturnType<AWSAppSyncClient<any>["subscribe"]> {
         return this.client.subscribe({
             query: gql(subscribeToDeploymentUpdate),
             variables: {
