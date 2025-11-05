@@ -11,12 +11,15 @@ export namespace DeploymentUpdate {
     type MoreInfoType = "PROVIDER" | "INPUT";
 
     export interface DataSchema {
-        DeploymentGuid: string;
-        Type: DeploymentUpdateType;
-        Message: string;
-        MoreInfoComponentName?: string;
-        MoreInfoType?: MoreInfoType;
-        MoreInfoKey?: string;
+      DeploymentGuid: string;
+      Type: DeploymentUpdateType;
+      Message: string;
+      MoreInfoComponentName?: string;
+      MoreInfoType?: MoreInfoType;
+      MoreInfoKey?: string;
+      ComponentName?: string;
+      JobRunGuid?: string;
+      Status?: "FAILED" | "IN_PROGRESS" | "DONE";
     }
 
     export class EntityObservation implements IEntityObservation {

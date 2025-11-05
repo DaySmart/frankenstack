@@ -24,6 +24,9 @@ export default function DeploymentUpdateDecider_JobRunHandler(
   
   const deploymentUpdate: DeploymentUpdate.DataSchema = {
     DeploymentGuid: data.DeploymentGuid,
+    ComponentName: data.ComponentName,
+    JobRunGuid: data.JobRunGuid,
+    Status: data.Error ? "FAILED" : "IN_PROGRESS",
     Message: message,
     Type: "INFO"
   };

@@ -374,6 +374,9 @@ ${
         moreInfoType: null,
         moreInfoKey: null,
         __typename: "DeploymentUpdate",
+        componentName: data.ComponentName,
+        jobRunGuid: data.JobRunGuid,
+        status: data.Error ? "FAILED" : "IN_PROGRESS",
       }
       */
       console.log(data.data.subscribeToDeploymentUpdate.message);
