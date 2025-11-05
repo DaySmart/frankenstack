@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 const minimist = require('minimist');
 const version = require('../package.json').version;
-import Deployer from '../src';
+// Lazy-load Deployer only when needed to avoid loading heavy deps for --version/help
+let Deployer: any;
 
 const run = async () => {
     const args = minimist(process.argv);
@@ -28,6 +29,9 @@ Options:
         process.exit(0);
     }
     const file = args._[3];
+    if(!Deployer) {
+        Deployer = require('../src').default;
+    }
     const deploy = new Deployer(command, file, args);
     try {
         await deploy.run();

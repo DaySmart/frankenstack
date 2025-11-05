@@ -12,10 +12,9 @@ import { S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { resolveComponents, resolveInputVariables } from "./utils/variables";
 
-interface CustomNodeJsGlobal extends NodeJS.Global {
-  WebSocket: any;
-}
-declare const global: CustomNodeJsGlobal;
+// The NodeJS.Global type is no longer exported in recent @types/node versions.
+// Use globalThis to augment instead.
+declare const global: typeof globalThis & { WebSocket: any };
 
 global.WebSocket = require("ws");
 require("es6-promise").polyfill();
@@ -260,11 +259,17 @@ export default class Deployer {
     const componantNames = template.components.map(
       (component) => component.name
     );
-    await client.removeComponent({
-      deploymentGuid: this.deploymentGuid,
-      env: template.env,
-      componentNames: componantNames,
-    });
+    // API only supports single component removal (componentName); remove each sequentially.
+    for (const componentName of componantNames) {
+      console.log(
+        `Queueing removal for component ${template.env}:${componentName}`
+      );
+      await client.removeComponent({
+        deploymentGuid: this.deploymentGuid,
+        env: template.env,
+        componentName: componentName,
+      });
+    }
     this.subscribeToDeploymentUpdates(client);
   }
 
@@ -331,10 +336,10 @@ ${
       }
     };
     const subscription = observable.subscribe({
-      next: (data) => {
+      next: (data: any) => {
         realtimeResults(data);
       },
-      error: (error) => {
+      error: (error: any) => {
         console.warn(error);
       },
     });
