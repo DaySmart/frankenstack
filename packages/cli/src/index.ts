@@ -64,15 +64,17 @@ export default class Deployer {
   }
 
   async run() {
-    const creds = await defaultProvider({ profile: this.config.profile })();
-    AWS.config.credentials = creds;
-    const awsconfig = await ssmConfig(creds, this.config.stageOveride);
+    const credentials = await defaultProvider({
+      profile: this.config.profile,
+    })();
+    AWS.config.credentials = credentials;
+    const awsConfig = await ssmConfig(credentials, this.config.stageOveride);
     const client = new EnvironmentServiceAppSyncClient(
-      awsconfig,
-      creds //await (new CredentialProviderChain()).resolvePromise()
+      awsConfig,
+      credentials //await (new CredentialProviderChain()).resolvePromise()
     );
     if (this.command === "deploy") {
-      await this.deploy(this.config._[3], creds, awsconfig, client);
+      await this.deploy(this.config._[3], credentials, awsConfig, client);
     } else if (this.command === "rollback") {
       await this.rollback(this.config._[3], this.config._[4], client);
     } else if (this.command === "iam") {
@@ -102,8 +104,8 @@ export default class Deployer {
 
   async deploy(
     file: string,
-    creds: any,
-    awsconfig: any,
+    credentials: any,
+    awsConfig: any,
     client: EnvironmentServiceAppSyncClient
   ) {
     const template: Template = this.parseComponentTemplate(file);
@@ -131,13 +133,26 @@ export default class Deployer {
     archive.glob("**", { ignore: "node_modules/**", dot: true });
     archive.finalize();
 
+    // Allow overriding the target artifact bucket so CodeBuild Source can reference the uploaded zip.
+    // If FRANKENSTACK_DEPLOYMENT_BUCKET is set it will take precedence over the Amplify user files bucket.
+    const targetBucket =
+      process.env.FRANKENSTACK_DEPLOYMENT_BUCKET ||
+      awsConfig.aws_user_files_s3_bucket;
+    if (!targetBucket) {
+      throw "No deployment bucket resolved. Set FRANKENSTACK_DEPLOYMENT_BUCKET or ensure aws_user_files_s3_bucket exists in SSM config.";
+    }
+    const region = awsConfig.aws_user_files_s3_bucket_region || "us-east-1";
+    console.log(
+      `Uploading deployment artifact to bucket: ${targetBucket} in region: ${region} with credentials from profile: ${this.config.profile}`
+    );
+
     const upload = new Upload({
       client: new S3Client({
-        region: awsconfig.aws_user_files_s3_bucket_region || "us-east-1",
-        credentials: creds,
+        region: region,
+        credentials: credentials,
       }),
       params: {
-        Bucket: awsconfig.aws_user_files_s3_bucket,
+        Bucket: targetBucket,
         Key: this.deploymentGuid + `.zip`,
         Body: output,
         ContentType: "application/zip",
