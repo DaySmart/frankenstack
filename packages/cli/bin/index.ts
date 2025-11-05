@@ -15,7 +15,8 @@ debugLog("Entrypoint loaded", { argv: process.argv });
 process.on("beforeExit", (code) => debugLog("beforeExit", code));
 process.on("exit", (code) => debugLog("exit", code));
 process.on("SIGINT", () => {
-  debugLog("SIGINT received");
+  console.log("SIGINT received");
+  process.exit(130);
 });
 // Lazy-load Deployer only when needed to avoid loading heavy deps for --version/help
 let Deployer: any;
