@@ -12,6 +12,9 @@ export const deploymentUpdate = `mutation DeploymentUpdate(
   $moreInfoComponentName: String
   $moreInfoKey: String
   $moreInfoType: String
+  $componentName: String
+  $jobRunGuid: String
+  $status: String
 ) {
   deploymentUpdate(
     deploymentGuid: $deploymentGuid
@@ -20,6 +23,9 @@ export const deploymentUpdate = `mutation DeploymentUpdate(
     moreInfoComponentName: $moreInfoComponentName
     moreInfoKey: $moreInfoKey
     moreInfoType: $moreInfoType
+    componentName: $componentName
+    jobRunGuid: $jobRunGuid
+    status: $status
   ) {
     deploymentGuid
     type
@@ -27,6 +33,9 @@ export const deploymentUpdate = `mutation DeploymentUpdate(
     moreInfoComponentName
     moreInfoType
     moreInfoKey
+    componentName
+    jobRunGuid
+    status
   }
 }
 `;

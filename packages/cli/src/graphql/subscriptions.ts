@@ -9,6 +9,9 @@ export const subscribeToDeploymentUpdate = `subscription SubscribeToDeploymentUp
     moreInfoComponentName
     moreInfoType
     moreInfoKey
+    componentName
+    jobRunGuid
+    status
   }
 }
 `;

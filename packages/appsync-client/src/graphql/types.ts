@@ -179,6 +179,9 @@ export type DeploymentUpdateMutation = {
     moreInfoComponentName: string | null;
     moreInfoType: string | null;
     moreInfoKey: string | null;
+    componentName: string | null;
+    jobRunGuid: string | null;
+    status: string | null;
   } | null;
 };
 
@@ -225,5 +228,8 @@ export type SubscribeToDeploymentUpdateSubscription = {
     moreInfoComponentName: string | null;
     moreInfoType: string | null;
     moreInfoKey: string | null;
+    componentName: string | null;
+    jobRunGuid: string | null;
+    status: string | null;
   } | null;
 };

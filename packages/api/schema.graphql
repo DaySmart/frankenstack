@@ -11,6 +11,9 @@ type Mutation {
       moreInfoComponentName: String
       moreInfoKey: String
       moreInfoType: String
+      componentName: String
+      jobRunGuid: String
+      status: String
     ): DeploymentUpdate
 
     putUser(
@@ -69,6 +72,9 @@ type DeploymentUpdate {
   moreInfoComponentName: String
   moreInfoType: String
   moreInfoKey: String
+  componentName: String
+  jobRunGuid: String
+  status: String
 }
 
 type ComponentDeployment {
