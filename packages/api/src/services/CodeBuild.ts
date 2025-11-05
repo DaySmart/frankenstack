@@ -22,7 +22,7 @@ export module CodeBuildClient {
     export async function triggerCodeBuild(params: CodeBuildTriggerParams, log: any): Promise<CodeBuild.StartBuildOutput> {
         try {
             const artifactGuid = params.artifactOverideGuid ? params.artifactOverideGuid : params.deploymentGuid;
-            const nodejsVersion = params.componentProviderName === 'cdk' ? 14 : params.nodejsVersion
+            const nodejsVersion = params.componentProviderName === 'cdk' ? 14 : (params.nodejsVersion || 22);
             let codeBuildParams: CodeBuild.StartBuildInput = {
                 projectName: process.env.CODE_BUILD_PROJECT as string,
                 buildspecOverride: generateBuildSpec(params.buildDir, nodejsVersion),
@@ -47,8 +47,15 @@ export module CodeBuildClient {
                     }
                 }
             }
-            if (nodejsVersion === 14)
-              codeBuildParams.imageOverride = 'aws/codebuild/standard:5.0';
+                        // Select appropriate CodeBuild image based on Node version. Standard images map:
+                        // 5.0 -> Node 16, 6.0 -> Node 18, 7.0 -> Node 20. Node 14 also supported by 5.0.
+                        if (nodejsVersion === 14 || nodejsVersion === 16) {
+                            codeBuildParams.imageOverride = 'aws/codebuild/standard:5.0';
+                        } else if (nodejsVersion === 18) {
+                            codeBuildParams.imageOverride = 'aws/codebuild/standard:6.0';
+                        } else if (nodejsVersion >= 20) {
+                            codeBuildParams.imageOverride = 'aws/codebuild/standard:7.0';
+                        }
 
 
 
@@ -70,13 +77,13 @@ export module CodeBuildClient {
         const buildSpecObj = {
             version: '0.2',
             proxy: {
-                'upload-artificats': 'yes',
+                'upload-artifacts': 'yes',
                 logs: 'yes'
             },
             phases: {
                 install: {
                     'runtime-versions': {
-                        nodejs: nodejsVersion ?? 12
+                        nodejs: nodejsVersion
                     },
                     commands: buildDir ? [
                         `cd ${buildDir}`,
