@@ -37,8 +37,10 @@ export default function DeploymentUpdateDecider_DeploymentHandler(
     );
     const deploymentUpdate: DeploymentUpdate.DataSchema = {
       DeploymentGuid: data.DeploymentGuid,
+      ComponentName: data.Components.map(c => c.Name).join(", "),
+      Status: data.Status,
       Message: message,
-      Type: deploymentFailed ? "ERROR" : "DONE"
+      Type: deploymentFailed ? "ERROR" : "DONE",
     };
 
     decisions.push(createNewObservation(DeploymentUpdate.EntityObservation, deploymentUpdate, observation.traceid));

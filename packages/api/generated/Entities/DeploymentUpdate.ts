@@ -19,7 +19,7 @@ export namespace DeploymentUpdate {
       MoreInfoKey?: string;
       ComponentName?: string;
       JobRunGuid?: string;
-      Status?: "FAILED" | "IN_PROGRESS" | "DONE";
+      Status?: string;
     }
 
     export class EntityObservation implements IEntityObservation {

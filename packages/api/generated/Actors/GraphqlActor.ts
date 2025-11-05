@@ -23,12 +23,14 @@ export default async function GraphqlActor(
 
   const deploymentUpdateObservation: DeploymentUpdateMutationVariables = {
     deploymentGuid: data.DeploymentGuid,
-    message: data.Message.replace(/\n/g, "\\n")
-      .replace('"', '\"'),
+    componentName: data.ComponentName,
+    jobRunGuid: data.JobRunGuid,
+    status: data.Status,
+    message: data.Message.replace(/\n/g, "\\n").replace('"', '"'),
     type: data.Type,
     moreInfoComponentName: data.MoreInfoComponentName,
     moreInfoKey: data.MoreInfoKey,
-    moreInfoType: data.MoreInfoType
+    moreInfoType: data.MoreInfoType,
   };
   if(!awsconfig) {
     awsconfig = await ssmConfig(process.env.STAGE);

@@ -166,6 +166,9 @@ export type DeploymentUpdateMutationVariables = {
   moreInfoComponentName?: string | null,
   moreInfoKey?: string | null,
   moreInfoType?: string | null,
+  componentName?: string | null,
+  jobRunGuid?: string | null,
+  status?: string | null
 };
 
 export type DeploymentUpdateMutation = {

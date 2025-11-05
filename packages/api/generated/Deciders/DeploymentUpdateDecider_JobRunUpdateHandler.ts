@@ -15,17 +15,28 @@ export default function DeploymentUpdateDecider_JobRunUpdateHandler(
   //   log("[callHandler] dependentObservations", { dependentObservations });
   const data = observation.data;
 
-  const jobRuns = dependentObservations[0] as Observation2<JobRun.EntityObservation>[];
+  const jobRuns = dependentObservations[0] as Observation2<
+    JobRun.EntityObservation
+  >[];
   if (jobRuns[0]) {
     const jobRun = jobRuns[0] as Observation2<JobRun.EntityObservation>;
 
     const deploymentUpdate: DeploymentUpdate.DataSchema = {
       DeploymentGuid: jobRun.data.DeploymentGuid,
+      ComponentName: jobRun.data.ComponentName,
+      JobRunGuid: jobRun.data.JobRunGuid,
+      Status: "IN_PROGRESS",
       Message: data.Message.replace("\n", ""),
-      Type: "INFO"
+      Type: "INFO",
     };
 
-    decisions.push(createNewObservation(DeploymentUpdate.EntityObservation, deploymentUpdate, observation.traceid));
+    decisions.push(
+      createNewObservation(
+        DeploymentUpdate.EntityObservation,
+        deploymentUpdate,
+        observation.traceid
+      )
+    );
   }
 
   //   log("[handler] results", {

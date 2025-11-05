@@ -16,6 +16,8 @@ export default function DeploymentUpdateDecider_ComponentHandler(
 
   const deploymentUpdate: DeploymentUpdate.DataSchema = {
     DeploymentGuid: data.DeploymentGuid,
+    ComponentName: data.Name,
+    Status: data.Status,
     Message: "Component finished deploying",
     Type: "COMPONENT_DONE"
   };
