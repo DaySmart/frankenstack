@@ -431,7 +431,7 @@ resources:
         Environment:
           ComputeType: BUILD_GENERAL1_MEDIUM
           Type: LINUX_CONTAINER
-          Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+          Image: aws/codebuild/standard:7.0
         LogsConfig:
           CloudWatchLogs:
             GroupName: !Ref CodeBuildCloudwatchLogGroup
