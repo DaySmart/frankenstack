@@ -187,6 +187,8 @@ custom:
     includeModules:
       forceInclude:
         - graphql
+        - apollo-client
+        - redux
       forceExclude:
         - aws-sdk
     packagerOptions:
