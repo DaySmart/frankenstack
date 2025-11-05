@@ -196,8 +196,6 @@ custom:
   prune:
     automatic: true
     number: 3
-  jest:
-    testRegex: /__tests__/.*.test.js
   appSync:
     name: ${self:service.name}-${opt:stage, self:provider.stage}
     authenticationType: AWS_IAM
@@ -534,5 +532,4 @@ plugins:
   - serverless-appsync-plugin
   - aws-amplify-serverless-plugin
   - serverless-webpack
-  - serverless-jest-plugin
   - ./serverless-plugin-newrelic-lambda-ext.js
