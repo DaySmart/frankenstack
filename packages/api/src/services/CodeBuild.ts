@@ -110,8 +110,10 @@ export module CodeBuildClient {
     // found in the serverless-generated BuildSpec. This keeps minimal artifacts (template + script only) working.
     const installCommands = buildDir
       ? [
+          `echo "Install phase started with build directory: ${buildDir}"`,
           `cd ${buildDir}`,
           `if [ -f package.json ]; then echo \"package.json found in ${buildDir} -> installing deps\"; npm ci || npm install; else echo \"No package.json found in ${buildDir}, skipping npm install\"; fi`,
+          `echo "Install phase finished in ${buildDir}"`,
         ]
       : [
           'echo "Install phase started"',
