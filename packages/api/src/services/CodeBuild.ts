@@ -87,29 +87,30 @@ export module CodeBuildClient {
         ];
 
         const buildSpecObj = {
-            version: '0.2',
-            proxy: {
-                'upload-artifacts': 'yes',
-                logs: 'yes'
+          version: "0.2",
+          proxy: {
+            "upload-artifacts": "yes",
+            logs: "yes",
+          },
+          phases: {
+            install: {
+              "runtime-versions": {
+                nodejs: nodejsVersion,
+              },
+              commands: installCommands,
             },
-            phases: {
-                install: {
-                    'runtime-versions': {
-                        nodejs: nodejsVersion
-                    },
-                    commands: installCommands
-                },
-                pre_build: {
-                    commands: [
-                        `npm install -g git+https://github.com/DaySmart/deployer.git#${deployerBranchName}`
-                    ]
-                },
-                build: {
-                    commands: [
-                        'deployer'
-                    ]
-                }
-            }
+            pre_build: {
+                commands: [
+                  "npm config set prefer-online true",
+                  "npm cache clean --force",
+                  "rm -rf ~/.npm/_cacache 2>/dev/null || true",
+                  `npm install -g github:DaySmart/deployer#${deployerBranchName}`,
+                ],
+            },
+            build: {
+              commands: ["deployer"],
+            },
+          },
         };
         try {
             const buildSpec = yaml.dump(buildSpecObj);
