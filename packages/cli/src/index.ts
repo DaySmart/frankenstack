@@ -394,7 +394,9 @@ ${
     );
     template.components.forEach((component, index) => {
       console.log(
-        `  ${index + 1}. ${component.name} (provider: ${component.provider.name})`
+        `  ${index + 1}. ${component.name} (provider: ${
+          component.provider.name
+        })`
       );
     });
     this.logger?.log("sending-deployment-form", {
@@ -403,7 +405,9 @@ ${
     await client.sendDeploymentForm(this.deploymentGuid, template);
     console.log("Deployment request submitted successfully.");
     console.log("Waiting for deployment updates...");
-    this.logger?.log("deployment-form-sent", { deploymentGuid: this.deploymentGuid });
+    this.logger?.log("deployment-form-sent", {
+      deploymentGuid: this.deploymentGuid,
+    });
     this.subscribeToDeploymentUpdates(client);
   }
 
