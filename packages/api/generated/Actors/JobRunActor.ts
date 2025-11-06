@@ -38,6 +38,17 @@ export default async function JobRunActor(
 
     awsResourceArn = observation.data.Provider.ResourceArn;
 
+    // Construct CloudWatch Logs console link for the Lambda function (invocation logs appear in the function's log group).
+    try {
+      const regionFromArn = awsResourceArn.split(":")[3];
+      const functionName = awsResourceArn.split(":").slice(6).join(":");
+      const encodedFunctionName = encodeURIComponent(`/aws/lambda/${functionName}`).replace(/%2F/g, "$252F");
+      const lambdaLogsUrl = `https://console.aws.amazon.com/cloudwatch/home?region=${regionFromArn}#logsV2:log-groups/log-group/${encodedFunctionName}`;
+      console.log("[external-call] invoking lambda", { functionName, lambdaLogsUrl });
+    } catch(e) {
+      console.warn("[external-call] could not build lambda logs URL", e);
+    }
+
     try {
       await lambda
         .invokeAsync({
@@ -104,6 +115,29 @@ export default async function JobRunActor(
       );
 
       awsResourceArn = codeBuildTriggerResponse.build?.arn;
+
+      // Build console links for CodeBuild build and CloudWatch log stream.
+      if (awsResourceArn) {
+        try {
+          // arn:aws:codebuild:region:account:build/projectName:buildId
+            const parts = awsResourceArn.split(":");
+            const region = parts[3];
+            const buildInfo = parts[5]; // build/projectName
+            const fullProjectName = buildInfo.split("/")[1];
+            const buildId = awsResourceArn.split(":").pop();
+            const codeBuildUrl = `https://console.aws.amazon.com/codesuite/codebuild/projects/${fullProjectName}/build/${fullProjectName}:${buildId}/?region=${region}`;
+            const logGroup = process.env.CODE_BUILD_LOG_GROUP || "frankenstack-deployments";
+            const logStream = jobRunGuid;
+            const encLogGroup = encodeURIComponent(logGroup).replace(/%2F/g, "$252F");
+            const encLogStream = encodeURIComponent(logStream).replace(/%2F/g, "$252F");
+            const cwLogsUrl = `https://console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${encLogGroup}/log-events/${encLogStream}`;
+            console.log("[external-call] triggered codebuild", { projectName: fullProjectName, buildId, codeBuildUrl, cwLogsUrl });
+        } catch(e) {
+          console.warn("[external-call] could not build codebuild/cw log URLs", e);
+        }
+      } else {
+        console.log("[external-call] codebuild triggered but build ARN missing");
+      }
 
       console.log("[action] codeBuildTriggerResponse", { codeBuildTriggerResponse });
     } catch(err) {

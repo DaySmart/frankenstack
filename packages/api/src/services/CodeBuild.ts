@@ -27,10 +27,16 @@ export module CodeBuildClient {
       const artifactGuid = params.artifactOverideGuid
         ? params.artifactOverideGuid
         : params.deploymentGuid;
-      const nodejsVersion =
-        params.componentProviderName === "cdk"
-          ? 14
-          : params.nodejsVersion || 22;
+      // Determine desired Node.js runtime. Historically 'cdk' defaulted to 14, but AWS SDK v3 packages now
+      // require >=18. Unless FRANKENSTACK_ALLOW_LEGACY_NODE is explicitly set, we auto-upgrade any
+      // requested version <18 to 18 and log a notice so builds stop emitting EBADENGINE warnings.
+      let nodejsVersion = params.componentProviderName === "cdk"
+        ? (params.nodejsVersion || 18)
+        : (params.nodejsVersion || 22);
+      if (nodejsVersion < 18 && !process.env.FRANKENSTACK_ALLOW_LEGACY_NODE) {
+        log("[codebuild] upgrading nodejsVersion to 18 due to engine requirements", { requested: nodejsVersion });
+        nodejsVersion = 18;
+      }
       let codeBuildParams: CodeBuild.StartBuildInput = {
         projectName: process.env.CODE_BUILD_PROJECT as string,
         buildspecOverride: generateBuildSpec(params.buildDir, nodejsVersion),
@@ -127,6 +133,10 @@ export module CodeBuildClient {
             "npm ci || npm install",
             "npm link",
             'command -v deployer >/dev/null 2>&1 && echo "Deployer installed successfully" || echo "Deployer NOT installed"',
+            // Enforce strict unhandled promise rejection behavior to avoid silent failures.
+            'export NODE_OPTIONS="--unhandled-rejections=strict"',
+            // Validate provider module presence early; fails fast with guidance if missing.
+            'node -e "try{const p=JSON.parse(process.env.COMPONENT_PROVIDER);require.resolve(p.Name);console.log(\"Provider module resolved:\",p.Name);}catch(e){console.error(\"Provider module NOT found.\", e.message, \"Ensure it is listed in your buildDir package.json dependencies and included in the deployment artifact.\");process.exit(1);}"'
           ],
         },
         build: {
