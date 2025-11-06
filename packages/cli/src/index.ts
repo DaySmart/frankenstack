@@ -227,6 +227,11 @@ export default class Deployer {
     console.log("Packaging complete!");
     this.logger?.log("artifact-uploaded", { bucket: targetBucket, region });
 
+    console.log("Submitting deployment request to Frankenstack service...");
+    this.logger?.log("deployment-request-start", {
+      env: template.env,
+      componentCount: template.components.length,
+    });
     await this.deployTemplate(client, template);
   }
 
@@ -384,7 +389,21 @@ ${
     client: EnvironmentServiceAppSyncClient,
     template: Template
   ) {
+    console.log(
+      `Deploying ${template.components.length} component(s) to environment: ${template.env}`
+    );
+    template.components.forEach((component, index) => {
+      console.log(
+        `  ${index + 1}. ${component.name} (provider: ${component.provider.name})`
+      );
+    });
+    this.logger?.log("sending-deployment-form", {
+      componentNames: template.components.map((c) => c.name),
+    });
     await client.sendDeploymentForm(this.deploymentGuid, template);
+    console.log("Deployment request submitted successfully.");
+    console.log("Waiting for deployment updates...");
+    this.logger?.log("deployment-form-sent", { deploymentGuid: this.deploymentGuid });
     this.subscribeToDeploymentUpdates(client);
   }
 
