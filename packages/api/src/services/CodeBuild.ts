@@ -140,7 +140,8 @@ export module CodeBuildClient {
             // Enforce strict unhandled promise rejection behavior to avoid silent failures.
             'export NODE_OPTIONS="--unhandled-rejections=strict"',
             // Validate provider module presence early; fails fast with guidance if missing.
-            'node -e "try{const p=JSON.parse(process.env.COMPONENT_PROVIDER);require.resolve(p.Name);console.log("Provider module resolved:",p.Name);}catch(e){console.error("Provider module NOT found.", e.message, "Ensure it is listed in your buildDir package.json dependencies and included in the deployment artifact.");process.exit(1);}"',
+            // NOTE: Use single-quoted outer string for YAML and single-quoted JS -e body to avoid nested quote breakage.
+            `node -e 'try { const raw=process.env.COMPONENT_PROVIDER||"{}"; const p=JSON.parse(raw); if(!p.Name){ console.error("COMPONENT_PROVIDER missing Name"); process.exit(1);} try { require.resolve(p.Name); console.log("Provider module resolved:", p.Name); } catch (inner) { console.error("Provider module NOT found.", inner.message, "Ensure it is in dependencies of your buildDir package.json and included in the artifact."); process.exit(1); } } catch (e) { console.error("Failed to parse COMPONENT_PROVIDER:", e.message); process.exit(1); }'`,
           ],
         },
         build: {
