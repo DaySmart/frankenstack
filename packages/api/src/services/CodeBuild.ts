@@ -30,11 +30,15 @@ export module CodeBuildClient {
       // Determine desired Node.js runtime. Historically 'cdk' defaulted to 14, but AWS SDK v3 packages now
       // require >=18. Unless FRANKENSTACK_ALLOW_LEGACY_NODE is explicitly set, we auto-upgrade any
       // requested version <18 to 18 and log a notice so builds stop emitting EBADENGINE warnings.
-      let nodejsVersion = params.componentProviderName === "cdk"
-        ? (params.nodejsVersion || 18)
-        : (params.nodejsVersion || 22);
+      let nodejsVersion =
+        params.componentProviderName === "cdk"
+          ? params.nodejsVersion || 18
+          : params.nodejsVersion || 22;
       if (nodejsVersion < 18 && !process.env.FRANKENSTACK_ALLOW_LEGACY_NODE) {
-        log("[codebuild] upgrading nodejsVersion to 18 due to engine requirements", { requested: nodejsVersion });
+        log(
+          "[codebuild] upgrading nodejsVersion to 18 due to engine requirements",
+          { requested: nodejsVersion }
+        );
         nodejsVersion = 18;
       }
       let codeBuildParams: CodeBuild.StartBuildInput = {
@@ -136,7 +140,7 @@ export module CodeBuildClient {
             // Enforce strict unhandled promise rejection behavior to avoid silent failures.
             'export NODE_OPTIONS="--unhandled-rejections=strict"',
             // Validate provider module presence early; fails fast with guidance if missing.
-            'node -e "try{const p=JSON.parse(process.env.COMPONENT_PROVIDER);require.resolve(p.Name);console.log(\"Provider module resolved:\",p.Name);}catch(e){console.error(\"Provider module NOT found.\", e.message, \"Ensure it is listed in your buildDir package.json dependencies and included in the deployment artifact.\");process.exit(1);}"'
+            'node -e "try{const p=JSON.parse(process.env.COMPONENT_PROVIDER);require.resolve(p.Name);console.log("Provider module resolved:",p.Name);}catch(e){console.error("Provider module NOT found.", e.message, "Ensure it is listed in your buildDir package.json dependencies and included in the deployment artifact.");process.exit(1);}"',
           ],
         },
         build: {
