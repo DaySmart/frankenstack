@@ -74,6 +74,18 @@ export module CodeBuildClient {
 
     function generateBuildSpec(buildDir?: string, nodejsVersion?: number): string {
         const deployerBranchName = 'env-service-refactor';
+        // NOTE: The deployment artifact for certain providers (e.g. 'hardcoded') may not contain a package.json.
+        // The previous unconditional 'npm install' caused CodeBuild to fail with ENOENT when package.json was absent.
+        // We now guard the install step so it only runs when a package.json exists, mirroring the conditional logic
+        // found in the serverless-generated BuildSpec. This keeps minimal artifacts (template + script only) working.
+        const installCommands = buildDir ? [
+            `cd ${buildDir}`,
+            `if [ -f package.json ]; then echo \"package.json found in ${buildDir} -> installing deps\"; npm ci || npm install; else echo \"No package.json found in ${buildDir}, skipping npm install\"; fi`
+        ] : [
+            'echo "Install phase started"',
+            'if [ -f package.json ]; then echo "package.json found -> installing deps"; npm ci || npm install; else echo "No package.json found, skipping npm install"; fi'
+        ];
+
         const buildSpecObj = {
             version: '0.2',
             proxy: {
@@ -85,12 +97,9 @@ export module CodeBuildClient {
                     'runtime-versions': {
                         nodejs: nodejsVersion
                     },
-                    commands: buildDir ? [
-                        `cd ${buildDir}`,
-                        'npm install'
-                    ] : ['npm install']
+                    commands: installCommands
                 },
-                'pre_build': {
+                pre_build: {
                     commands: [
                         `npm install -g git+https://github.com/DaySmart/deployer.git#${deployerBranchName}`
                     ]
@@ -101,7 +110,7 @@ export module CodeBuildClient {
                     ]
                 }
             }
-        }
+        };
         try {
             const buildSpec = yaml.dump(buildSpecObj);
             console.log('buildSpec.yml', buildSpec);
