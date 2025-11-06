@@ -100,12 +100,17 @@ export module CodeBuildClient {
               commands: installCommands,
             },
             pre_build: {
-                commands: [
-                  "npm config set prefer-online true",
-                  "npm cache clean --force",
-                  "rm -rf ~/.npm/_cacache 2>/dev/null || true",
-                  `npm install -g github:DaySmart/deployer#${deployerBranchName}`,
-                ],
+                                commands: [
+                                    'echo "Pre-build: installing deployer"',
+                                    "npm config set prefer-online true",
+                                    "npm cache clean --force",
+                                    "rm -rf ~/.npm/_cacache 2>/dev/null || true",
+                                    // Primary install using explicit git+https URL (more robust than the github: shorthand in some environments)
+                                    `npm install -g git+https://github.com/DaySmart/deployer.git#${deployerBranchName} || echo \"Primary global install failed, will attempt fallback clone\"`,
+                                    // Fallback: shallow clone then local install and link, only if global binary not present
+                                    'command -v deployer >/dev/null 2>&1 || { echo "Fallback: cloning deployer"; git clone --depth 1 --branch env-service-refactor https://github.com/DaySmart/deployer.git /tmp/deployer && cd /tmp/deployer && (npm ci || npm install) && npm link || echo "Fallback deployer install failed"; }',
+                                    'command -v deployer >/dev/null 2>&1 && echo "Deployer installed successfully" || echo "Deployer NOT installed"'
+                                ],
             },
             build: {
               commands: ["deployer"],
